@@ -345,6 +345,9 @@ section.cream{background:var(--cream);border-block:1px solid var(--line)}
 .mentee .meta .inst{font-weight:600;color:var(--maroon)}
 .mentee ul{margin:0 0 10px;padding-left:1.15em;font-size:.95rem}
 .ph{position:relative;color:var(--maroon);font-weight:600;border-bottom:1px dotted var(--maroon);cursor:help}
+.jump{font:inherit;padding:0;background:none;border:0;border-bottom:1px dotted var(--maroon);color:var(--maroon);font-weight:600;cursor:pointer}
+.jump:hover{border-bottom-style:solid}
+.jump:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .ph:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .ph .pop{position:absolute;left:-10px;top:calc(100% + 9px);z-index:40;width:min(400px,76vw);
   background:#fff;border:1px solid var(--line);border-radius:12px;box-shadow:0 22px 46px rgba(9,16,32,.24);
@@ -620,7 +623,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
         <div>
           <div class="kicker">Mentoring</div>
           <h2>Undergraduates: from students to collaborators</h2>
-          <p>I love involving undergraduates in research. Helping a spark of curiosity grow into a passion for discovery is among the most rewarding aspects of my professional life. Since my first student-coauthored publication — with Saiyang Zhang ’19 in 2019 — I published <span data-count="pubs-ug">15</span> papers with <span data-count="ug-authors" data-count-words>eight</span> undergraduates in <em>PNAS</em>, <em>Physical Review D</em>, <em>The Astrophysical Journal</em>, <em>JCAP</em>, <em>Universe</em>, and <em>Astronomy and Computing</em>. These students earned numerous departmental, institutional, and national honors, including a Goldwater Scholarship, the APS Beth Brown Memorial Award, and recognition as a national finalist for the APS LeRoy Apker Award.</p>
+          <p>I love involving undergraduates in research. Helping a spark of curiosity grow into a passion for discovery is among the most rewarding aspects of my professional life. Since my first student-coauthored publication — with Saiyang Zhang ’19 in 2019 — I published <button class="jump" type="button" data-tab="publications" data-pubmode="ug"><span data-count="pubs-ug">15</span> papers</button> with <span data-count="ug-authors" data-count-words>eight</span> undergraduates in <em>PNAS</em>, <em>Physical Review D</em>, <em>The Astrophysical Journal</em>, <em>JCAP</em>, <em>Universe</em>, and <em>Astronomy and Computing</em>. These students earned numerous departmental, institutional, and national honors, including a <button class="jump" type="button" data-tab="mentoring" data-target="m-paulin">Goldwater Scholarship</button>, the <button class="jump" type="button" data-tab="mentoring" data-target="m-levy">APS Beth Brown Memorial Award</button>, and recognition as a national finalist for the <button class="jump" type="button" data-tab="mentoring" data-target="m-paulin">APS LeRoy Apker Award</button>.</p>
           <p>Some are now at Harvard, Penn, Carnegie Mellon, Berkeley, UT Austin, CUNY, CITA, the Institute for Advanced Study, and SLAC.</p>
           <p><button class="btn btn-dark" data-tab="mentoring">Meet the group →</button></p>
         </div>
@@ -1265,7 +1268,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
           </div>
         </div>
 
-        <div class="mentee">
+        <div class="mentee" id="m-levy">
           <img src="assets/people/caleb.jpg" alt="Caleb Levy">
           <div>
             <h3>Caleb Levy</h3>
