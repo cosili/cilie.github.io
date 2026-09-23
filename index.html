@@ -148,6 +148,22 @@ nav.tabs .ditem{font:inherit;font-size:.9rem;font-weight:500;text-align:left;wid
 nav.tabs .ditem:hover,nav.tabs .ditem:focus-visible{background:rgba(246,214,138,.14);color:var(--gold-soft)}
 @media(min-width:861px){nav.tabs{overflow:visible}}
 @media(max-width:860px){.dropdown{display:none}nav.tabs .caret{display:none}}
+
+/* the hover menus cannot open on a touch screen, and nav.tabs scrolls
+   horizontally there so an absolute menu would be clipped: below 861px the
+   active tab's sections are mirrored as a scrollable row of chips instead */
+nav.subtabs{display:none}
+@media(max-width:860px){
+  nav.subtabs{display:flex;gap:6px;max-width:var(--wrap);margin:0 auto;padding:0 14px 9px;
+    overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+  nav.subtabs:empty{display:none}
+  nav.subtabs::-webkit-scrollbar{display:none}
+  nav.subtabs .subtab{font:inherit;font-size:.78rem;font-weight:500;white-space:nowrap;
+    padding:5px 11px;border-radius:999px;cursor:pointer;
+    border:1px solid rgba(246,214,138,.28);background:rgba(246,214,138,.08);color:#dfe7f5}
+  nav.subtabs .subtab:active,nav.subtabs .subtab:focus-visible{
+    background:rgba(246,214,138,.2);color:var(--gold-soft)}
+}
 [data-sec],.area[id],.mentee[id]{scroll-margin-top:calc(var(--headerh,56px) + 22px)}
 
 /* ---------- panels ---------- */
@@ -527,6 +543,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
       <button data-tab="cv">CV</button>
     </nav>
   </div>
+  <nav class="subtabs" id="subtabs" aria-label="Sections in this tab"></nav>
 </header>
 
 <main>
@@ -558,7 +575,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
 
   <div class="stats">
     <div class="row" style="display:flex;flex-wrap:wrap;justify-content:center;gap:clamp(24px,6vw,86px)">
-      <button class="stat prize" type="button" data-tab="research" data-target="r-awards"><b>Winner of the National Academy of Sciences<br>Cozzarelli Prize</b><span>2023</span></button>
+      <button class="stat prize" type="button" data-tab="research" data-target="r-awards"><b>Winner of the National Academy of Sciences <br>Cozzarelli Prize</b><span>2023</span></button>
     </div>
   </div>
 
@@ -1691,19 +1708,22 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
 <script>
 (function(){
   var TABS=['home','research','publications','mentoring','teaching','press','cv'];
+  var current='home';
 
   function show(name, push){
     if(TABS.indexOf(name)<0) name='home';
+    current=name;
     TABS.forEach(function(t){
       var p=document.getElementById(t);
       if(p) p.classList.toggle('active', t===name);
     });
-    document.querySelectorAll('nav.tabs button').forEach(function(b){
+    document.querySelectorAll('nav.tabs button:not(.ditem)').forEach(function(b){
       if(b.dataset.tab===name) b.setAttribute('aria-current','page');
       else b.removeAttribute('aria-current');
     });
     document.title = (name==='home' ? 'Cosmin Ilie — Astrophysicist & Cosmologist'
       : name.charAt(0).toUpperCase()+name.slice(1)+' — Cosmin Ilie');
+    buildSubtabs(name);
     if(push && location.hash!=='#'+name){ history.pushState({tab:name},'','#'+name); }
     window.scrollTo({top:0,behavior:'instant' in document.documentElement.style ? 'instant' : 'auto'});
   }
@@ -1723,16 +1743,41 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
   var hdr=document.querySelector('header.site');
   function setHeaderH(){ document.documentElement.style.setProperty('--headerh',(hdr?hdr.offsetHeight:56)+'px'); }
   setHeaderH(); window.addEventListener('resize', setHeaderH);
+
+  /* mirror the active tab's hover menu into the narrow-screen chip row.
+     Chips carry data-target but deliberately not data-tab: the tab is already
+     open, and a tab switch would scroll back to the top before the section
+     scroll could run. */
+  var subnav=document.getElementById('subtabs');
+  function buildSubtabs(name){
+    if(!subnav) return;
+    subnav.innerHTML='';
+    var menu=null;
+    document.querySelectorAll('nav.tabs .tabwrap').forEach(function(w){
+      var b=w.querySelector('button[data-tab]');
+      if(b && b.dataset.tab===name) menu=w.querySelector('.dropdown');
+    });
+    if(menu) menu.querySelectorAll('.ditem').forEach(function(d){
+      var c=document.createElement('button');
+      c.type='button'; c.className='subtab';
+      c.dataset.target=d.dataset.target;
+      c.textContent=d.textContent;
+      subnav.appendChild(c);
+    });
+    setHeaderH();
+  }
+  buildSubtabs(current); /* show() ran before this element was looked up */
   document.querySelectorAll('[data-pubmode]').forEach(function(b){
     b.addEventListener('click', function(){ if(window.__pubMode) window.__pubMode(b.dataset.pubmode); });
   });
-  document.querySelectorAll('[data-target]').forEach(function(d){
-    d.addEventListener('click', function(){
-      var t=document.getElementById(d.dataset.target);
-      requestAnimationFrame(function(){
-        if(t) t.scrollIntoView({behavior:'smooth',block:'start'});
-        d.blur();
-      });
+  /* delegated, because the chip row is built after load */
+  document.addEventListener('click', function(e){
+    var d=e.target.closest('[data-target]');
+    if(!d) return;
+    var t=document.getElementById(d.dataset.target);
+    requestAnimationFrame(function(){
+      if(t) t.scrollIntoView({behavior:'smooth',block:'start'});
+      d.blur();
     });
   });
 
