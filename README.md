@@ -46,16 +46,45 @@ Everything is plain HTML with comments marking each tab:
 - **New paper** — copy an existing `<div class="pub">` block at the top of the
   publications list, change the id/title/authors/journal/year. Set
   `data-ug="1"` if an undergraduate is a coauthor and `data-first="1"` if you
-  are first or sole author, so the filter chips stay correct.
+  are first or sole author, so the filter chips stay correct. Those same two
+  attributes feed the stat strip, so the counts follow on their own — see
+  "Counts look after themselves" below. Use `class="pub non"` for a
+  non-refereed item and `class="pub sub"` for one under review; a plain
+  `class="pub"` counts as refereed.
 - **New student** — copy a `<div class="mentee">` block, drop a square portrait
-  (about 420×420) into `assets/people/`.
+  (about 420×420) into `assets/people/`. The mentee count updates itself.
 - **New press item** — copy a `<li>` in the relevant year group on the Press
   tab.
 - **New CV** — recompile the LaTeX and overwrite `Cosmin_Ilie_CV.pdf`.
 
-The hand-maintained numbers on the Home and Mentoring stat strips (24 refereed
-papers, 15 papers with undergraduate coauthors, 10 mentees) need updating by
-hand when the lists change.
+## Counts look after themselves
+
+The tallies on the Mentoring stat strip and in the Publications blurb are
+counted from the lists they describe, so adding a paper or a mentee updates
+them with no second edit. Each one carries a `data-count` key:
+
+| Key              | Counts                                    |
+| ---------------- | ----------------------------------------- |
+| `pubs-refereed`  | `#publist .pub:not(.non):not(.sub)`       |
+| `pubs-ug`        | `#publist .pub[data-ug="1"]`              |
+| `pubs-first`     | `#publist .pub[data-first="1"]`           |
+| `pubs-non`       | `#publist .pub.non`                       |
+| `pubs-sub`       | `#publist .pub.sub`                       |
+| `mentees`        | `#m-past .mentee`                         |
+
+Add `data-count-words` to render the number as a word ("two") rather than a
+digit, for numbers that sit inside prose.
+
+The number written in the HTML is the no-JS fallback, not a placeholder — it
+renders if the script never runs, and the script overwrites it otherwise. If
+the two disagree the console says so on load; the page is already showing the
+right value at that point, the warning just means the fallback text is worth
+refreshing.
+
+Two stats are deliberately left unbound because they have no list to count:
+"1 APS Apker Award national finalist" and "1 Goldwater Scholar". So is the
+phrase "three seemingly distinct puzzles" on the Home tab, which counts
+puzzles rather than the single paper linked beside it.
 
 ## Notes
 

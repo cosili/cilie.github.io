@@ -303,12 +303,48 @@ section.cream{background:var(--cream);border-block:1px solid var(--line)}
   border-radius:999px;padding:4px 13px}
 .awards{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-bottom:10px}
 .award-pill{font-size:.78rem;font-weight:600;background:#fdf3dd;border:1px solid #f0dda9;color:#7a5406;border-radius:999px;padding:3px 10px}
+/* ---------- "Interviewed by" line on a mentee card ---------- */
+.mentee .medialine{font-size:.88rem;color:var(--muted);margin:0 0 10px}
+.mentee .medialine b{font-weight:600;color:var(--text)}
+.mentee .medialine a{color:var(--maroon);font-weight:600}
+
+/* ---------- In their own words: pull-quote cards ---------- */
+.voices{display:grid;grid-template-columns:repeat(2,1fr);gap:20px;margin-top:6px}
+.voice{display:grid;grid-template-columns:72px 1fr;gap:18px;align-items:start;margin:0;
+  background:linear-gradient(165deg,var(--space-2),var(--space-3));color:#fff;
+  border:1px solid rgba(255,255,255,.08);border-radius:var(--radius);padding:22px 24px}
+.voice img{width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid var(--gold-soft)}
+.voice blockquote{margin:0 0 12px;font-family:'Fraunces',serif;font-size:1.06rem;line-height:1.45}
+.voice figcaption{font-size:.85rem;color:#aebbd2}
+.voice figcaption b{color:var(--gold-soft);font-weight:700;letter-spacing:.02em}
+.voice figcaption a{color:var(--gold-soft);text-decoration:underline;text-underline-offset:2px}
+.voice .kindtag{display:inline-block;font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;
+  color:#aebbd2;border:1px solid rgba(255,255,255,.18);border-radius:4px;padding:1px 7px;margin-left:6px}
+@media(max-width:900px){.voices{grid-template-columns:1fr}}
+@media(max-width:520px){.voice{grid-template-columns:1fr}.voice img{width:60px;height:60px}}
 @media(max-width:520px){.mentee{grid-template-columns:1fr}.mentee img{width:80px;height:80px}}
 
 /* gallery */
 
 /* gallery: thumbnails open a full-size lightbox */
 .gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+/* gallery as a horizontally scrolling deck */
+.deckwrap{position:relative}
+.gallery.deck{display:flex;grid-template-columns:none;gap:12px;overflow-x:auto;
+  scroll-snap-type:x mandatory;scroll-behavior:smooth;padding:2px 2px 8px;
+  scrollbar-width:none;-ms-overflow-style:none;overscroll-behavior-x:contain}
+.gallery.deck::-webkit-scrollbar{display:none}
+.gallery.deck .thumb{flex:0 0 clamp(210px,29%,310px);scroll-snap-align:start}
+.deckbtn{position:absolute;top:calc(50% - 6px);transform:translateY(-50%);z-index:3;
+  width:38px;height:38px;border-radius:50%;border:1px solid var(--line);background:#fff;
+  box-shadow:0 6px 18px rgba(9,16,32,.16);cursor:pointer;color:var(--text);
+  font-size:1.15rem;line-height:1;display:grid;place-items:center;transition:.15s}
+.deckbtn:hover{background:var(--gold-soft);border-color:var(--gold)}
+.deckbtn:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.deckbtn[hidden]{display:none}
+.deckbtn.prev{left:-16px}
+.deckbtn.next{right:-16px}
+@media(max-width:760px){.deckbtn{display:none}}
 .thumb{padding:0;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;
   cursor:zoom-in;box-shadow:var(--shadow);transition:transform .16s,box-shadow .16s}
 .thumb:hover{transform:translateY(-2px);box-shadow:0 16px 34px rgba(9,16,32,.18)}
@@ -374,6 +410,7 @@ section.cream{background:var(--cream);border-block:1px solid var(--line)}
 .pf .hl{font-family:'Fraunces',serif;font-size:1.12rem;margin:8px 0 10px;display:block;line-height:1.3}
 .pf .mt{font-size:.85rem;color:#aebbd2}
 .pf .mt a{color:var(--gold-soft)}
+.pf .ug{color:inherit}
 .presslist{list-style:none;margin:0;padding:0}
 .presslist li{display:grid;grid-template-columns:78px 1fr;gap:16px;padding:13px 0;border-bottom:1px solid var(--line)}
 .presslist .yr{color:var(--muted);font-weight:600;font-size:.9rem;font-variant-numeric:tabular-nums}
@@ -391,6 +428,11 @@ section.cream{background:var(--cream);border-block:1px solid var(--line)}
 .callout h3{color:#fff;font-size:1.5rem}
 .callout p{color:#d6dff0}
 .callout p:last-child{margin-bottom:0}
+.callout .testimonial{margin:22px 0 0;padding:16px 0 0;border-top:1px solid rgba(255,255,255,.14)}
+.callout .testimonial blockquote{margin:0 0 10px;font-family:'Fraunces',serif;font-size:1.05rem;line-height:1.5;color:#fff}
+.callout .testimonial figcaption{font-size:.85rem;color:#aebbd2}
+.callout .testimonial figcaption b{color:var(--gold-soft);font-weight:700}
+.callout .testimonial figcaption a{color:var(--gold-soft);text-decoration:underline;text-underline-offset:2px}
 
 /* footer */
 footer.site{background:var(--space);color:#93a2ba;padding:52px 0 34px;border-top:1px solid rgba(255,255,255,.08)}
@@ -415,10 +457,10 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
     <nav class="tabs" aria-label="Sections">
       <button data-tab="home">Home</button>
       <span class="tabwrap"><button data-tab="research">Research<span class="caret" aria-hidden="true">▾</span></button><span class="dropdown"><button class="ditem" type="button" data-tab="research" data-target="r-themes">Research themes</button><button class="ditem" type="button" data-tab="research" data-target="r-recent">Recent highlights</button><button class="ditem" type="button" data-tab="research" data-target="r-awards">Awards</button><button class="ditem" type="button" data-tab="research" data-target="r-funding">Funding</button><button class="ditem" type="button" data-tab="research" data-target="r-talks">Talks</button></span></span>
-      <button data-tab="publications">Publications</button><span class="tabwrap"><button data-tab="mentoring">Mentoring<span class="caret" aria-hidden="true">▾</span></button><span class="dropdown"><button class="ditem" type="button" data-tab="mentoring" data-target="m-overview">Overview</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-gallery">Gallery</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-current">Current group</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-past">Past honors mentees</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-join">Join the group</button></span></span>
+      <button data-tab="publications">Publications</button><span class="tabwrap"><button data-tab="mentoring">Mentoring<span class="caret" aria-hidden="true">▾</span></button><span class="dropdown"><button class="ditem" type="button" data-tab="mentoring" data-target="m-overview">Overview</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-gallery">Gallery</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-current">Current group</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-past">Past honors mentees</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-voices">In their own words</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-join">Join the group</button></span></span>
       
       <button data-tab="teaching">Teaching</button>
-      <span class="tabwrap"><button data-tab="press">Press<span class="caret" aria-hidden="true">▾</span></button><span class="dropdown"><button class="ditem" type="button" data-tab="press" data-target="p-featured">Featured</button><button class="ditem" type="button" data-tab="press" data-target="p-2026">2026</button><button class="ditem" type="button" data-tab="press" data-target="p-2025">2025</button><button class="ditem" type="button" data-tab="press" data-target="p-2324">2023–24</button><button class="ditem" type="button" data-tab="press" data-target="p-earlier">Earlier</button></span></span>
+      <span class="tabwrap"><button data-tab="press">Press<span class="caret" aria-hidden="true">▾</span></button><span class="dropdown"><button class="ditem" type="button" data-tab="press" data-target="p-featured">Featured</button><button class="ditem" type="button" data-tab="press" data-target="p-2026">2026</button><button class="ditem" type="button" data-tab="press" data-target="p-2025">2025</button><button class="ditem" type="button" data-tab="press" data-target="p-2024">2024</button><button class="ditem" type="button" data-tab="press" data-target="p-2324">2023</button><button class="ditem" type="button" data-tab="press" data-target="p-earlier">Earlier</button></span></span>
       <button data-tab="cv">CV</button>
     </nav>
   </div>
@@ -463,12 +505,12 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
         <div class="kicker">The short version</div>
         <h2>Dark matter across cosmic messengers</h2>
         <p>I am an Assistant Professor of Physics and Astronomy at Colgate University. My research sits at the intersection of dark matter theory and observational astrophysics: I build theoretical models of how dark matter shapes the first objects in the universe, and derive predictions that telescopes can directly test. The key question at the core of my research agenda is: what observable traces might dark matter leave behind? One possibility is spectacular. In the Universe’s first star-forming halos, annihilating dark matter can heat collapsing primordial gas and support a star against its own gravity, allowing it to grow to <strong>a million times the mass of the Sun</strong> and outshine an entire young galaxy. These objects are supermassive dark stars — and JWST gives us our first realistic opportunity to find them.</p>
-        <p>It may already have. In 2023 I identified the <span class="ph" tabindex="0" role="button" aria-label="Show the paper">first three photometric dark-star candidates<span class="pop"><a href="https://www.pnas.org/doi/10.1073/pnas.2305762120" target="_blank" rel="noopener">Supermassive Dark Star Candidates Seen by JWST <span>Ilie, Paulin &amp; Freese · PNAS, 2023 <b class="tagpill">2023 NAS Cozzarelli Prize</b></span></a></span></span> in JWST imaging — work recognized with the <a href="https://www.nasonline.org/news/pnas-announces-six-2023-cozzarelli-prize-recipients/" target="_blank" rel="noopener">National Academy of Sciences Cozzarelli Prize</a>. I then <span class="ph" tabindex="0" role="button" aria-label="Show the paper">extended the search to spectroscopy<span class="pop"><a href="https://www.pnas.org/doi/10.1073/pnas.2513193122" target="_blank" rel="noopener">Spectroscopic Supermassive Dark Star Candidates <span>Ilie, Mahmud, Paulin &amp; Freese · PNAS, 2025</span></a></span></span>, identifying cosmic-dawn sources whose NIRSpec spectra are consistent with dark stars. What continues to draw me to this problem is the possibility that a single class of object could help resolve <span class="ph" tabindex="0" role="button" aria-label="Show the paper">three seemingly distinct puzzles of cosmic dawn<span class="pop"><a href="https://www.mdpi.com/2218-1997/12/1/1" target="_blank" rel="noopener">Dark Stars as a Possible Solution to Three Recent Astronomical Puzzles <span>Ilie, Freese, Petric &amp; Paulin · Universe, 2026 <b class="tagpill">Journal cover</b></span></a></span></span>: galaxies that appear too bright, black holes that appear too massive, and JWST’s enigmatic little red dots. Dark stars may also leave signatures beyond infrared light: <span class="ph" tabindex="0" role="button" aria-label="Show the paper">black holes seeded by dark stars<span class="pop"><a href="https://journals.aps.org/prd/abstract/10.1103/hvfd-8fkr" target="_blank" rel="noopener">Reconstructing PTA Measurements via Early Seeding of Supermassive Black Holes <span>Ghodla &amp; Ilie · Physical Review D, 2026</span></a></span></span> could contribute substantially to the gravitational-wave background detected by pulsar timing arrays in 2023.</p>
+        <p>It may already have. In 2023 I identified the <span class="ph" tabindex="0" role="button" aria-label="Show the paper">first three photometric dark-star candidates<span class="pop"><a href="https://www.pnas.org/doi/10.1073/pnas.2305762120" target="_blank" rel="noopener">Supermassive Dark Star Candidates Seen by JWST <span>Ilie, Paulin &amp; Freese · Proceedings of the National Academy of Sciences, 2023 <b class="tagpill">2023 NAS Cozzarelli Prize</b></span></a></span></span> in JWST imaging — work recognized with the <a href="https://www.nasonline.org/news/pnas-announces-six-2023-cozzarelli-prize-recipients/" target="_blank" rel="noopener">National Academy of Sciences Cozzarelli Prize</a>. I then <span class="ph" tabindex="0" role="button" aria-label="Show the paper">extended the search to spectroscopy<span class="pop"><a href="https://www.pnas.org/doi/10.1073/pnas.2513193122" target="_blank" rel="noopener">Spectroscopic Supermassive Dark Star Candidates <span>Ilie, Mahmud, Paulin &amp; Freese · Proceedings of the National Academy of Sciences, 2025</span></a></span></span>, identifying cosmic-dawn sources whose NIRSpec spectra are consistent with dark stars. What continues to draw me to this problem is the possibility that a single class of object could help resolve <span class="ph" tabindex="0" role="button" aria-label="Show the paper">three seemingly distinct puzzles of cosmic dawn<span class="pop"><a href="https://www.mdpi.com/2218-1997/12/1/1" target="_blank" rel="noopener">Dark Stars as a Possible Solution to Three Recent Astronomical Puzzles <span>Ilie, Freese, Petric &amp; Paulin · Universe, 2026 <b class="tagpill">Journal cover</b></span></a></span></span>: galaxies that appear too bright, black holes that appear too massive, and JWST’s enigmatic little red dots. Dark stars may also leave signatures beyond infrared light: <span class="ph" tabindex="0" role="button" aria-label="Show the paper">black holes seeded by dark stars<span class="pop"><a href="https://journals.aps.org/prd/abstract/10.1103/hvfd-8fkr" target="_blank" rel="noopener">Reconstructing PTA Measurements via Early Seeding of Supermassive Black Holes <span>Ghodla &amp; Ilie · Physical Review D, 2026</span></a></span></span> could contribute substantially to the gravitational-wave background detected by pulsar timing arrays in 2023.</p>
         <p>I earned my Ph.D. at the University of Michigan in 2011 under Katherine Freese, after a B.S. in Theoretical Physics at the University of Bucharest, and held positions at UNC Chapel Hill, NASA/CREST centers at NCCU, Los Alamos National Laboratory, and IFIN-HH in Romania before coming to Colgate.</p>
       </div>
       <div class="figrow" data-lb-group>
-        <figure class="figcard"><button class="thumb" type="button" data-full="assets/fig-photometric.jpg" data-alt="Photometric candidates" data-caption="<strong>Photometric candidates.</strong> JADES-GS-z13-0, JADES-GS-z12-0 and JADES-GS-z11-0: the first three dark-star photometric candidates found in JWST data by Ilie, Paulin &amp; Freese (PNAS, 2023). Image credit: NASA/ESA."><img src="assets/fig-photometric.jpg" alt="Three JWST image cutouts showing the dark star candidates" loading="lazy" style="background:#05080f"></button><figcaption><strong>Photometric candidates</strong> The first three dark-star photometric candidates found in JWST data by <a href="https://www.pnas.org/doi/10.1073/pnas.2305762120" target="_blank" rel="noopener">Ilie, Paulin &amp; Freese (PNAS, 2023)</a>. <span class="credit">Image credit: NASA/ESA</span></figcaption></figure>
-        <figure class="figcard"><button class="thumb" type="button" data-full="assets/fig-spectroscopic.png" data-alt="Spectroscopy" data-caption="<strong>Spectroscopy.</strong> JWST/NIRSpec spectra (blue, with grey uncertainty band) of JADES-GS-z11-0, z13-0, z14-0 and z14-1, against best-fit supermassive dark star models (orange). The dashed red line marks the He&nbsp;II 1640&nbsp;Å absorption feature, expected only for dark stars; residuals below each panel stay within 1σ. Ilie, Mahmud, Paulin &amp; Freese (PNAS, 2025), Fig. 1."><img src="assets/fig-spectroscopic.png" alt="Four JWST NIRSpec spectra fitted with supermassive dark star models" loading="lazy"></button><figcaption><strong>Spectroscopy</strong> Four cosmic-dawn sources whose NIRSpec spectra (blue) match dark-star models (orange). <a href="https://www.pnas.org/doi/10.1073/pnas.2513193122" target="_blank" rel="noopener">Ilie, Mahmud, Paulin &amp; Freese (PNAS, 2025)</a>, Fig. 1.</figcaption></figure>
+        <figure class="figcard"><button class="thumb" type="button" data-full="assets/fig-photometric.jpg" data-alt="Photometric candidates" data-caption="<strong>Photometric candidates.</strong> JADES-GS-z13-0, JADES-GS-z12-0 and JADES-GS-z11-0: the first three dark-star photometric candidates found in JWST data by Ilie, Paulin &amp; Freese (Proceedings of the National Academy of Sciences, 2023). Image credit: NASA/ESA."><img src="assets/fig-photometric.jpg" alt="Three JWST image cutouts showing the dark star candidates" loading="lazy" style="background:#05080f"></button><figcaption><strong>Photometric candidates</strong> The first three dark-star photometric candidates found in JWST data by <a href="https://www.pnas.org/doi/10.1073/pnas.2305762120" target="_blank" rel="noopener">Ilie, Paulin &amp; Freese (Proceedings of the National Academy of Sciences, 2023)</a>. <span class="credit">Image credit: NASA/ESA</span></figcaption></figure>
+        <figure class="figcard"><button class="thumb" type="button" data-full="assets/fig-spectroscopic.png" data-alt="Spectroscopy" data-caption="<strong>Spectroscopy.</strong> JWST/NIRSpec spectra (blue, with grey uncertainty band) of JADES-GS-z11-0, z13-0, z14-0 and z14-1, against best-fit supermassive dark star models (orange). The dashed red line marks the He&nbsp;II 1640&nbsp;Å absorption feature, expected only for dark stars; residuals below each panel stay within 1σ. Ilie, Mahmud, Paulin &amp; Freese (Proceedings of the National Academy of Sciences, 2025), Fig. 1."><img src="assets/fig-spectroscopic.png" alt="Four JWST NIRSpec spectra fitted with supermassive dark star models" loading="lazy"></button><figcaption><strong>Spectroscopy</strong> Four cosmic-dawn sources whose NIRSpec spectra (blue) match dark-star models (orange). <a href="https://www.pnas.org/doi/10.1073/pnas.2513193122" target="_blank" rel="noopener">Ilie, Mahmud, Paulin &amp; Freese (Proceedings of the National Academy of Sciences, 2025)</a>, Fig. 1.</figcaption></figure>
         <figure class="figcard"><button class="thumb" type="button" data-full="assets/fig-pta.png" data-alt="Gravitational waves" data-caption="<strong>Gravitational waves.</strong> The nanohertz gravitational-wave background measured by pulsar timing arrays (grey), against predictions for black holes seeded by supermassive dark stars (blue) and by direct-collapse black holes (orange), which fall orders of magnitude short. Ghodla &amp; Ilie (Physical Review D, 2026)."><img src="assets/fig-pta.png" alt="Predicted gravitational-wave background from dark-star-seeded black holes compared with pulsar timing array data" loading="lazy"></button><figcaption><strong>Gravitational waves</strong> Black holes seeded by dark stars (blue) can account for the pulsar-timing-array signal (grey); direct-collapse seeds (orange) cannot. <a href="https://journals.aps.org/prd/abstract/10.1103/hvfd-8fkr" target="_blank" rel="noopener">Ghodla &amp; Ilie (Physical Review D, 2026)</a>.</figcaption></figure>
       </div>
     </div>
@@ -484,22 +526,22 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
         <div class="card link" data-tab="research" data-target="t-darkstars">
           <span class="tag">Dark stars</span>
           <p>The first stars in the universe may have run on dark matter — and JWST may have already seen them. They may also explain JWST’s puzzling “blue monsters”.</p>
-          <p class="arrow">Theme 1 →</p>
+          <p class="arrow">More on this theme →</p>
         </div>
         <div class="card link" data-tab="research" data-target="t-seeds">
           <span class="tag">Dark star seeded black holes</span>
           <p>When dark stars collapse, they leave black holes massive enough to seed the earliest supermassive black holes, and could naturally explain JWST's little red dots.</p>
-          <p class="arrow">Theme 2 →</p>
+          <p class="arrow">More on this theme →</p>
         </div>
         <div class="card link" data-tab="research" data-target="t-detectors">
           <span class="tag">Dark matter probes</span>
           <p>Stars, compact objects, exoplanets, brown dwarfs — the universe is full of natural dark matter detectors, and I use many of them to probe the particle nature of dark matter.</p>
-          <p class="arrow">Theme 3 →</p>
+          <p class="arrow">More on this theme →</p>
         </div>
         <div class="card link" data-tab="research" data-target="t-early">
           <span class="tag">Early universe cosmology</span>
           <p>The dark sector has a history — and its early moments shape everything we observe today.</p>
-          <p class="arrow">Theme 4 →</p>
+          <p class="arrow">More on this theme →</p>
         </div>
       </div>
     </div>
@@ -543,23 +585,24 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
             <span class="outlet">NPR Science Friday</span>
             <span class="hl">Have Astrophysicists Spotted Evidence For 'Dark Stars'?</span>
           </a>
-          <span class="mt">On <a href="https://www.pnas.org/doi/10.1073/pnas.2513193122" target="_blank" rel="noopener">Ilie, Mahmud, Paulin &amp; Freese, <em>PNAS</em> 122, e2513193122 (2025)</a></span>
+          <span class="mt">On <a href="https://www.pnas.org/doi/10.1073/pnas.2513193122" target="_blank" rel="noopener">Ilie, Mahmud<span class="ug">†</span>, Paulin<span class="ug">†</span> &amp; Freese, <em>Proceedings of the National Academy of Sciences</em> 122, e2513193122 (2025)</a></span>
         </div>
         <div class="pf">
-          <a class="pf-link" href="https://www.reuters.com/science/webb-telescope-captures-tantalizing-evidence-mysterious-dark-stars-2023-07-17/" target="_blank" rel="noopener">
-            <span class="outlet">Reuters</span>
-            <span class="hl">Webb telescope captures tantalizing evidence for mysterious 'dark stars'</span>
+          <a class="pf-link" href="https://physicsworld.com/a/delayed-big-bang-for-dark-matter-could-be-detected-in-gravitational-waves/" target="_blank" rel="noopener">
+            <span class="outlet">Physics World</span>
+            <span class="hl">Delayed Big Bang for dark matter could be detected in gravitational waves</span>
           </a>
-          <span class="mt">On <a href="https://www.pnas.org/doi/10.1073/pnas.2305762120" target="_blank" rel="noopener">Ilie, Paulin &amp; Freese, <em>PNAS</em> 120, e2305762120 (2023)</a></span>
+          <span class="mt">On <a href="https://journals.aps.org/prd/abstract/10.1103/PhysRevD.110.103522" target="_blank" rel="noopener">Casey<span class="ug">†</span> &amp; Ilie, <em>Physical Review D</em> 110, 103522 (2024)</a></span>
         </div>
         <div class="pf">
           <a class="pf-link" href="https://www.youtube.com/watch?v=zUhOL38346Y" target="_blank" rel="noopener">
             <span class="outlet">PBS Space Time</span>
             <span class="hl">Did JWST Discover Dark Matter Stars?</span>
           </a>
-          <span class="mt">On <a href="https://www.pnas.org/doi/10.1073/pnas.2305762120" target="_blank" rel="noopener">Ilie, Paulin &amp; Freese, <em>PNAS</em> 120, e2305762120 (2023)</a></span>
+          <span class="mt">On <a href="https://www.pnas.org/doi/10.1073/pnas.2305762120" target="_blank" rel="noopener">Ilie, Paulin<span class="ug">†</span> &amp; Freese, <em>Proceedings of the National Academy of Sciences</em> 120, e2305762120 (2023)</a></span>
         </div>
       </div>
+      <p class="legend" style="margin-top:-28px"><span class="ug">†</span> undergraduate coauthor</p>
       <p style="text-align:center;margin:0"><button class="btn btn-dark" data-tab="press">See all press coverage →</button></p>
     </div>
   </section>
@@ -584,25 +627,21 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
       </div>
       <div class="grid g2">
         <div class="area" id="t-darkstars">
-          <span class="theme-no">Theme 1</span>
           <h3>Dark stars</h3>
           <p>Dark-matter annihilation may have powered some of the Universe’s first stars before they ignited fusion, allowing them to grow into supermassive dark stars. I helped develop this idea and predict their detectable signatures with JWST, more than a decade before launch. At Colgate, my group built the analysis pipeline that identified the first photometric and spectroscopic candidates in the JWST data, and we are now using machine learning to accelerate discovery and search for decisive spectral signatures. If they exist, dark stars naturally explain JWST’s “blue monsters”: extremely bright, dust-free, very compact galaxies.</p>
           <button class="theme-link" type="button" data-tab="publications" data-theme="dark-stars">See the papers on this theme <span class="arr">&rarr;</span></button>
         </div>
         <div class="area v" id="t-seeds">
-          <span class="theme-no">Theme 2</span>
           <h3>Dark star seeded supermassive black holes</h3>
           <p>General-relativistic instabilities trigger the collapse of supermassive dark stars, providing a natural seeding mechanism for the billion-solar-mass black holes already observed at cosmic dawn. Mergers of black holes seeded this way may also contribute substantially to the gravitational-wave background detected by pulsar timing arrays. In addition, collapsed supermassive dark stars could become quasi-stars with cool (3,000–6,000 K) photospheres, thus reproducing key spectral and morphological properties of JWST’s mysterious “little red dots.”</p>
           <button class="theme-link" type="button" data-tab="publications" data-theme="seeds">See the papers on this theme <span class="arr">&rarr;</span></button>
         </div>
         <div class="area t" id="t-detectors">
-          <span class="theme-no">Theme 3</span>
           <h3>Astrophysical objects as dark matter probes</h3>
           <p>I use stars and compact astrophysical objects as natural detectors of dark matter. My work develops analytic and numerical descriptions of dark-matter capture — the process by which particles scatter inside an object, lose energy, and become gravitationally bound — including multiscatter, multicomponent, and velocity-suppressed interactions. Applying this framework to first stars, exoplanets, brown dwarfs, and black holes allows me to translate their heating, evolution, and survival into constraints on dark-matter properties that may be inaccessible to terrestrial experiments.</p>
           <button class="theme-link" type="button" data-tab="publications" data-theme="detectors">See the papers on this theme <span class="arr">&rarr;</span></button>
         </div>
         <div class="area m" id="t-early">
-          <span class="theme-no">Theme 4</span>
           <h3>Early universe cosmology</h3>
           <p>A complementary strand of my research explores the physics of the early Universe, well before the first atoms formed. For example, I explored nonstandard expansion histories such as early matter-dominated eras, nonstandard dark matter production models such as the dark Big Bang, and alternatives to cosmic inflation. These questions are largely distinct from the other three themes of my research program, but together they reflect a broader goal: understanding how fundamental physics leaves observable traces across cosmic history.</p>
           <button class="theme-link" type="button" data-tab="publications" data-theme="early">See the papers on this theme <span class="arr">&rarr;</span></button>
@@ -633,7 +672,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
           <span class="tag">2025 · PNAS</span>
           <h3>Spectroscopic dark star candidates</h3>
           <p>Found four cosmic dawn objects with spectra consistent with that of supermassive dark stars, one of which shows hints of a smoking gun helium absorption feature.</p>
-          <p><a href="https://www.pnas.org/doi/10.1073/pnas.2513193122" target="_blank" rel="noopener">PNAS 122, e2513193122 →</a></p>
+          <p><a href="https://www.pnas.org/doi/10.1073/pnas.2513193122" target="_blank" rel="noopener">Proceedings of the National Academy of Sciences 122, e2513193122 →</a></p>
         </div>
       </div>
     </div>
@@ -706,7 +745,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
     <div class="inner">
       <div class="eyebrow" style="color:var(--gold-soft)">Publications</div>
       <h2>Papers</h2>
-      <p>24 refereed articles, two non-refereed companions, and two manuscripts under review. Titles link to the journal or preprint record.</p>
+      <p><span data-count="pubs-refereed">24</span> refereed articles, <span data-count="pubs-non" data-count-words>two</span> non-refereed companions, and <span data-count="pubs-sub" data-count-words>two</span> manuscripts under review. Titles link to the journal or preprint record.</p>
     </div>
   </div>
 
@@ -738,6 +777,9 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
       </div>
 
       <div id="publist">
+<!-- PUBS:BEGIN — generated from the LaTeX CV by cvsync.py; edits between these
+     markers are overwritten. Add the paper to the CV instead, then re-run:
+       python3 cvsync.py Cosmin_Ilie_Academic_CV.tex --apply cilie.github.io/index.html -->
 
         <div class="pub sub" data-theme="seeds" data-ug="0" data-first="1">
           <div>
@@ -752,7 +794,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
           <div>
             <div class="t"><a href="https://arxiv.org/abs/2511.08578" target="_blank" rel="noopener">Early Formation of Supermassive Black Holes via Dark Star Gravitational Instability</a><span class="note">under review</span></div>
             <div class="a">K. Freese, G. M. Fuller, S. Ghodla, C. Ilie, K. S. Kehrer, T. Rindler-Daller, and E. I. Sfakianakis</div>
-            <div class="j"><em>PNAS</em> — revise and resubmit, revision submitted September 2026 · arXiv:2511.08578</div>
+            <div class="j"><em>Proceedings of the National Academy of Sciences</em> — revise and resubmit, revision submitted September 2026 · arXiv:2511.08578</div>
           </div>
           <span class="yr">2025</span>
         </div>
@@ -991,6 +1033,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
           <span class="yr">2010</span>
         </div>
 
+      <!-- PUBS:END -->
       </div>
       <p class="count" id="pubcount"></p>
     </div>
@@ -1007,8 +1050,8 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
 
   <div class="stats" style="background:var(--space-2)">
     <div class="row" style="grid-template-columns:repeat(4,1fr)">
-      <button class="stat" type="button" data-tab="mentoring" data-target="m-past"><b>11</b><span>honors &amp; high-honors mentees</span></button>
-      <button class="stat" type="button" data-tab="publications" data-pubmode="ug"><b>15</b><span>papers with undergraduate coauthors</span></button>
+      <button class="stat" type="button" data-tab="mentoring" data-target="m-past"><b data-count="mentees">11</b><span>honors &amp; high-honors mentees</span></button>
+      <button class="stat" type="button" data-tab="publications" data-pubmode="ug"><b data-count="pubs-ug">15</b><span>papers with undergraduate coauthors</span></button>
       <button class="stat" type="button" data-tab="mentoring" data-target="m-paulin"><b>1</b><span>APS Apker Award national finalist</span></button>
       <button class="stat" type="button" data-tab="mentoring" data-target="m-paulin"><b>1</b><span>Goldwater Scholar</span></button>
     </div>
@@ -1018,17 +1061,22 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
     <div class="wrap narrow">
       <div class="kicker">Mentoring</div>
       <h2>Undergraduate research, all the way to publication</h2>
-      <p>At a liberal arts college the students are the research group. Mine join at various stages, some even during their freshman year. For each my main goal is the same: enrich their college experience and boost their chances for a successful future career. To achieve this I strive to include undergraduates at all stages of the research process, culminating with presentations at national and international conferences and publication in top journals in the field. Eleven students followed that path so far, and it shows: 15 publications and 14 awards for their research, four of them national.</p>
+      <p>At a liberal arts college the students are the research group. Mine join at various stages, some even during their freshman year. For each my main goal is the same: enrich their college experience and boost their chances for a successful future career. To achieve this I strive to include undergraduates at all stages of the research process, culminating with presentations at national and international conferences and publication in top journals.</p>
     </div>
   </section>
 
   <section class="block cream tight" id="m-gallery" data-sec>
     <div class="wrap">
-      <div class="gallery">
+      <div class="deckwrap">
+        <button class="deckbtn prev" type="button" aria-label="Scroll gallery left" hidden>‹</button>
+        <div class="gallery deck">
+        <button class="thumb" type="button" data-full="assets/jillian-board.jpg" data-alt="Jillian Paulin at a blackboard covered in dark-matter capture equations" data-caption="<strong>At the board.</strong> Jillian Paulin (&#39;23) highlighting the results of <a href=&quot;https://iopscience.iop.org/article/10.3847/1538-4357/ac651b&quot; target=&quot;_blank&quot; rel=&quot;noopener&quot;>Ilie &amp; Paulin, <em>ApJ</em> 932, 46 (2022)</a>. Photographed for <em>Colgate Magazine</em>."><img src="assets/jillian-board.jpg" alt="Jillian Paulin at a blackboard covered in dark-matter capture equations" loading="lazy"></button>
         <button class="thumb" type="button" data-full="assets/group-board.jpg" data-alt="Research group in front of a blackboard covered in dark matter equations" data-caption="<strong>2023 summer research group.</strong> Left to right: Jared Diks ('25), Lance Chen ('25), Shafaat Mahmud ('26), Jillian Paulin ('23), Richard Casey ('24), and Cosmin Ilie."><img src="assets/group-board.jpg" alt="Research group in front of a blackboard covered in dark matter equations" loading="lazy"></button>
         <button class="thumb" type="button" data-full="assets/group-room.jpg" data-alt="Saiyang Zhang with Colgate students after his departmental seminar" data-caption="<strong>Full circle.</strong> Saiyang Zhang ('19) back at Colgate to give a departmental seminar on his Ph.D. work at UT Austin — with students just before the post-seminar discussion."><img src="assets/group-room.jpg" alt="Saiyang Zhang with Colgate students after his departmental seminar" loading="lazy"></button>
         <button class="thumb" type="button" data-full="assets/poster.jpg" data-alt="Gunnar Gasper presenting a poster on dark star nebular emission" data-caption="<strong>Gunnar Gasper ('28)</strong> presenting &quot;Probing Dark Star Nebular Emission&quot; at Colgate's Summer Research Poster Session."><img src="assets/poster.jpg" alt="Gunnar Gasper presenting a poster on dark star nebular emission" loading="lazy" style="object-position:50% 12%"></button>
         <button class="thumb" type="button" data-full="assets/idm2024.jpg" data-alt="Cosmin Ilie with collaborators and students at the IDM 2024 conference in L'Aquila" data-caption="<strong>IDM 2024, L&#39;Aquila.</strong> Left to right: Cosmin Ilie, Luca Visinelli, Jillian Paulin (&#39;23), Richard Casey (&#39;24), Saiyang Zhang (&#39;19), and Katherine Freese, at the Identification of Dark Matter conference in Italy."><img src="assets/idm2024.jpg" alt="Cosmin Ilie with collaborators and students at the IDM 2024 conference in L'Aquila" loading="lazy"></button>
+        </div>
+        <button class="deckbtn next" type="button" aria-label="Scroll gallery right">›</button>
       </div>
     </div>
   </section>
@@ -1070,7 +1118,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
       <div class="section-head">
         <div class="kicker">Alumni</div>
         <h2>Past honors research mentees</h2>
-        <p>Honors and high-honors research mentees, most recent first. Every prize listed on a card was awarded for the research that student did in the group.</p>
+        <p>Honors and high-honors research mentees, most recent first, listing awards for research done in the group, publications we coauthored, and placement.</p>
       </div>
       <div class="grid g2">
 
@@ -1079,11 +1127,12 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
           <div>
             <h3>Manolya Yatman</h3>
             <div class="meta"><span class="years">2025–2026</span> · Dark stars · <span class="inst">Bryn Mawr College '26</span></div>
+            <div class="awards"><span class="award-pill">2025 Keck Northeast Astronomy Consortium Fellow</span></div>
             <ul>
-              <li>Joined the group in Summer 2025 as a <strong>Keck Northeast Astronomy Consortium fellow</strong> and continued through her senior honors thesis.</li>
-              <li>A manuscript from that work, <em>Searching for Supermassive Dark Star Candidates with JWST Photometric Surveys</em>, is in preparation for <em>The Astrophysical Journal</em>.</li>
+              <li><em>Searching for Supermassive Dark Star Candidates with JWST Photometric Surveys</em> (ApJ; in prep.).</li>
               <li>Presented our work at several conferences.</li>
             </ul>
+            <p class="medialine"><b>Interviewed by:</b> <a href="https://summerinternships.blogs.brynmawr.edu/2025/09/05/a-summer-exploring-dark-stars-by-manolya-yatman-26/" target="_blank" rel="noopener">Beyond Bryn Mawr</a></p>
             <span class="now">Now: Ph.D. student, City University of New York</span>
           </div>
         </div>
@@ -1095,7 +1144,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
             <div class="meta"><span class="years">2023–2026</span> · Dark stars</div>
             <div class="awards"><span class="award-pill">Edwin Foster Kingsbury Prize</span><span class="award-pill">Phi Beta Kappa Saracino Prize</span></div>
             <ul>
-              <li>Coauthored <span class="ph" tabindex="0" role="button" aria-label="Show the papers">a <em>PNAS</em> paper<span class="pop"><a href="https://www.pnas.org/doi/10.1073/pnas.2513193122" target="_blank" rel="noopener">Spectroscopic Supermassive Dark Star Candidates <span>PNAS, 2025</span></a></span></span> on spectroscopic dark-star candidates.</li><li>Coauthored <span class="ph" tabindex="0" role="button" aria-label="Show the papers">two <em>Astronomy and Computing</em> papers<span class="pop"><a href="https://www.sciencedirect.com/science/article/pii/S2213133726001241" target="_blank" rel="noopener">Neural Network Identification of Dark Star Candidates. I. Photometry <span>Astronomy &amp; Computing, 2026</span></a><a href="https://www.sciencedirect.com/science/article/pii/S221313372600137X" target="_blank" rel="noopener">Neural Network Identification of Dark Star Candidates. II. Spectroscopy <span>Astronomy &amp; Computing, 2026</span></a></span></span> introducing machine-learning tools for photometric and spectroscopic dark-star identification.</li><li>Presented our work at national and international conferences.</li>
+              <li>Coauthored <span class="ph" tabindex="0" role="button" aria-label="Show the papers">a <em>PNAS</em> paper<span class="pop"><a href="https://www.pnas.org/doi/10.1073/pnas.2513193122" target="_blank" rel="noopener">Spectroscopic Supermassive Dark Star Candidates <span>Proceedings of the National Academy of Sciences, 2025</span></a></span></span> on spectroscopic dark-star candidates.</li><li>Coauthored <span class="ph" tabindex="0" role="button" aria-label="Show the papers">two <em>Astronomy and Computing</em> papers<span class="pop"><a href="https://www.sciencedirect.com/science/article/pii/S2213133726001241" target="_blank" rel="noopener">Neural Network Identification of Dark Star Candidates. I. Photometry <span>Astronomy &amp; Computing, 2026</span></a><a href="https://www.sciencedirect.com/science/article/pii/S221313372600137X" target="_blank" rel="noopener">Neural Network Identification of Dark Star Candidates. II. Spectroscopy <span>Astronomy &amp; Computing, 2026</span></a></span></span> introducing machine-learning tools for photometric and spectroscopic dark-star identification.</li><li>Presented our work at national and international conferences.</li>
             </ul>
             <span class="now">Now: Ph.D. student, Carnegie Mellon University</span>
           </div>
@@ -1134,6 +1183,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
             <ul>
               <li>Coauthored <span class="ph" tabindex="0" role="button" aria-label="Show the papers">a <em>Physical Review D</em> paper<span class="pop"><a href="https://journals.aps.org/prd/abstract/10.1103/PhysRevD.110.103522" target="_blank" rel="noopener">Dark Sector Tunneling Field Potentials for a Dark Big Bang <span>Physical Review D, 2024</span></a></span></span> on the dark big bang.</li><li>Presented our work at several international conferences.</li>
             </ul>
+            <p class="medialine"><b>Interviewed by:</b> <a href="https://www.space.com/second-big-bang-second-dark-matter" target="_blank" rel="noopener">Space.com</a></p>
             <span class="now">Now: Scientist, SLAC National Accelerator Laboratory</span>
           </div>
         </div>
@@ -1145,8 +1195,9 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
             <div class="meta"><span class="years">2020–2023</span> · Dark stars and astrophysical dark-matter probes</div>
             <div class="awards"><span class="award-pill">NAS Cozzarelli Prize</span><span class="award-pill">Goldwater Scholar</span><span class="award-pill">APS Apker Award national finalist</span><span class="award-pill">Amato/Aveni Departmental Award</span></div>
             <ul>
-              <li>Coauthored <span class="ph" tabindex="0" role="button" aria-label="Show the papers">three dark star papers<span class="pop"><a href="https://www.pnas.org/doi/10.1073/pnas.2305762120" target="_blank" rel="noopener">Supermassive Dark Star Candidates Seen by JWST <span>PNAS, 2023 <b class="tagpill">2023 NAS Cozzarelli Prize</b></span></a><a href="https://www.pnas.org/doi/10.1073/pnas.2513193122" target="_blank" rel="noopener">Spectroscopic Supermassive Dark Star Candidates <span>PNAS, 2025</span></a><a href="https://www.mdpi.com/2218-1997/12/1/1" target="_blank" rel="noopener">Dark Stars as a Possible Solution to Three Recent Astronomical Puzzles <span>Universe, 2026 <b class="tagpill">Journal cover</b></span></a></span></span> — two in <em>PNAS</em>, one in <em>Universe</em> — including the Cozzarelli Prize-winning paper.</li><li>Coauthored <span class="ph" tabindex="0" role="button" aria-label="Show the papers">an <em>ApJ</em> paper<span class="pop"><a href="https://iopscience.iop.org/article/10.3847/1538-4357/ac651b" target="_blank" rel="noopener">Analytic Approximations for the Velocity Suppression of Dark Matter Capture <span>ApJ, 2022</span></a></span></span> on velocity suppression of dark-matter capture.</li><li>Presented our work at national and international conferences.</li>
+              <li>Coauthored <span class="ph" tabindex="0" role="button" aria-label="Show the papers">three dark star papers<span class="pop"><a href="https://www.pnas.org/doi/10.1073/pnas.2305762120" target="_blank" rel="noopener">Supermassive Dark Star Candidates Seen by JWST <span>Proceedings of the National Academy of Sciences, 2023 <b class="tagpill">2023 NAS Cozzarelli Prize</b></span></a><a href="https://www.pnas.org/doi/10.1073/pnas.2513193122" target="_blank" rel="noopener">Spectroscopic Supermassive Dark Star Candidates <span>Proceedings of the National Academy of Sciences, 2025</span></a><a href="https://www.mdpi.com/2218-1997/12/1/1" target="_blank" rel="noopener">Dark Stars as a Possible Solution to Three Recent Astronomical Puzzles <span>Universe, 2026 <b class="tagpill">Journal cover</b></span></a></span></span> — two in <em>PNAS</em>, one in <em>Universe</em> — including the Cozzarelli Prize-winning paper.</li><li>Coauthored <span class="ph" tabindex="0" role="button" aria-label="Show the papers">an <em>ApJ</em> paper<span class="pop"><a href="https://iopscience.iop.org/article/10.3847/1538-4357/ac651b" target="_blank" rel="noopener">Analytic Approximations for the Velocity Suppression of Dark Matter Capture <span>ApJ, 2022</span></a></span></span> on velocity suppression of dark-matter capture.</li><li>Presented our work at national and international conferences.</li>
             </ul>
+            <p class="medialine"><b>Interviewed by:</b> <a href="https://www.scientificamerican.com/article/jwst-might-have-spotted-the-first-dark-matter-stars/" target="_blank" rel="noopener">Scientific American</a> · <a href="https://news.colgate.edu/magazine/2023/11/10/research-results-may-show-evidence-of-dark-stars/" target="_blank" rel="noopener">Colgate Magazine</a></p>
             <span class="now">Now: Ph.D. candidate, University of Pennsylvania</span>
           </div>
         </div>
@@ -1160,6 +1211,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
             <ul>
               <li>Coauthored <span class="ph" tabindex="0" role="button" aria-label="Show the papers">four papers<span class="pop"><a href="https://journals.aps.org/prd/abstract/10.1103/PhysRevD.104.083033" target="_blank" rel="noopener">Multicomponent Multiscatter Capture of Dark Matter <span>Physical Review D, 2021</span></a><a href="https://journals.aps.org/prd/abstract/10.1103/PhysRevD.104.123031" target="_blank" rel="noopener">Constraining Dark Matter Properties with the First Generation of Stars <span>Physical Review D, 2021</span></a><a href="https://iopscience.iop.org/article/10.1088/1475-7516/2024/04/082" target="_blank" rel="noopener">The Effectiveness of Exoplanets and Brown Dwarfs as Sub-GeV Dark Matter Detectors <span>JCAP, 2024</span></a><a href="https://arxiv.org/abs/2009.11478" target="_blank" rel="noopener">Probing Below the Neutrino Floor with the First Generation of Stars <span>non-refereed letter, 2020</span></a></span></span> on dark-matter capture and the first stars: two in <em>Physical Review D</em>, one in <em>JCAP</em>, and one letter.</li><li>Presented our work at national and international conferences.</li>
             </ul>
+            <p class="medialine"><b>Interviewed by:</b> <a href="https://www.colgate.edu/news/features/caleb-levy-23" target="_blank" rel="noopener">Colgate News</a> · <a href="https://astronomyincolor.blogspot.com/2022/02/black-history-month-star-profiles_28.html" target="_blank" rel="noopener">Astronomy in Color</a></p>
             <span class="now">Now: Ph.D. student, Harvard University</span>
           </div>
         </div>
@@ -1214,11 +1266,56 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
     </div>
   </section>
 
+  <section class="block" id="m-voices" data-sec>
+    <div class="wrap">
+      <div class="section-head">
+        <div class="kicker">In their own words</div>
+        <h2>What it was like</h2>
+        <p>Mentees describing the research and the experience of doing it.</p>
+      </div>
+      <div class="voices">
+        <figure class="voice">
+          <img src="assets/people/caleb.jpg" alt="Caleb Levy" loading="lazy">
+          <div>
+            <blockquote>“He believed in my abilities, even when I was in doubt, and he helped nurture my curiosity for physics. I am eternally grateful for his mentorship and would not be here if he hadn’t had faith in me.”</blockquote>
+            <figcaption><b>Caleb Levy ’23</b> · <a href="https://www.colgate.edu/news/features/caleb-levy-23" target="_blank" rel="noopener">Colgate News</a><span class="kindtag">interview</span></figcaption>
+          </div>
+        </figure>
+        <figure class="voice">
+          <img src="assets/people/manolya.jpg" alt="Manolya Yatman" loading="lazy">
+          <div>
+            <blockquote>“My favorite part of the internship has definitely been working on a fringe idea, investigating an unproven theory with newly released data.”</blockquote>
+            <figcaption><b>Manolya Yatman ’26</b> · <a href="https://summerinternships.blogs.brynmawr.edu/2025/09/05/a-summer-exploring-dark-stars-by-manolya-yatman-26/" target="_blank" rel="noopener">Beyond Bryn Mawr</a><span class="kindtag">Q&amp;A</span></figcaption>
+          </div>
+        </figure>
+        <figure class="voice">
+          <img src="assets/people/jillian.jpg" alt="Jillian Paulin" loading="lazy">
+          <div>
+            <blockquote>“…make sure you can find good mentors who will give you good advice and are willing to listen to you.”</blockquote>
+            <figcaption><b>Jillian Paulin ’23</b> · <a href="https://www.ivoox.com/en/jillian-paulin-of-colgate-university-astronomy-physics-goldwater-audios-mp3_rf_131686082_1.html" target="_blank" rel="noopener">College Matters. Alma Matters.</a><span class="kindtag">podcast</span></figcaption>
+          </div>
+        </figure>
+        <figure class="voice">
+          <img src="assets/people/jacob.jpg" alt="Jacob Pilawa" loading="lazy">
+          <div>
+            <blockquote>“Prior to graduate school, I studied novel methods of dark matter detection with Cosmin Ilie at Colgate University.”</blockquote>
+            <figcaption><b>Jacob Pilawa ’20</b> · <a href="https://jacobpilawa.github.io/research/" target="_blank" rel="noopener">his research page</a><span class="kindtag">own site</span></figcaption>
+          </div>
+        </figure>
+      </div>
+      <p class="legend" style="margin-top:22px">Group feature: <a href="https://www.colgate.edu/news/stories/exploring-mysteries-dark-matter" target="_blank" rel="noopener">Exploring the Mysteries of Dark Matter</a> — Colgate News on the undergraduate dark-matter group, covering Saiyang Zhang, Caleb Levy, Jillian Paulin and Jacob Pilawa.</p>
+    </div>
+  </section>
+
   <section class="block cream" id="m-join" data-sec>
     <div class="wrap narrow">
       <div class="callout">
         <h3>Colgate students: want in?</h3>
-        <p>Email me at <a href="mailto:cilie@colgate.edu" style="color:var(--gold-soft)">cilie@colgate.edu</a> expressing interest and with a few sentences about what you find interesting, and we can talk. I also mentor through the KNAC Summer Research Program and Colgate's STARS program.</p>
+        <p>Email me at <a href="mailto:cilie@colgate.edu" style="color:var(--gold-soft)">cilie@colgate.edu</a> expressing interest.</p>
+        <figure class="testimonial">
+          <blockquote>“Immediately after the talk, I spoke to Prof. Ilie and asked if he would be willing to give me a chance to research dark matter with him, and he was very welcoming despite my being a first-year.”</blockquote>
+          <figcaption><b>Caleb Levy ’23</b> · <a href="https://www.colgate.edu/news/features/caleb-levy-23" target="_blank" rel="noopener">Colgate News</a></figcaption>
+        </figure>
       </div>
     </div>
   </section>
@@ -1307,6 +1404,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
         <li><span class="yr">Aug 2026</span><span><span class="outlet">Universe Today</span> — <a href="https://www.universetoday.com/articles/pulsar-timing-arrays-could-look-for-evidence-of-dark-matter-stars" target="_blank" rel="noopener">Pulsar Timing Arrays Could Look for Evidence of Dark Matter Stars</a></span></li>
         <li><span class="yr">Aug 2026</span><span><span class="outlet">EurekAlert!</span> — <a href="https://www.eurekalert.org/news-releases/1140698" target="_blank" rel="noopener">Dark stars may have left gravitational-wave echoes across the Universe</a></span></li>
         <li><span class="yr">Aug 2026</span><span><span class="outlet">Open Access Government</span> — <a href="https://www.openaccessgovernment.org/dark-stars-may-have-left-gravitational-wave-echoes-across-the-universe/213303/" target="_blank" rel="noopener">Dark stars may have left gravitational-wave echoes across the universe</a></span></li>
+        <li><span class="yr">Aug 2026</span><span><span class="outlet">Descopera.ro</span> — <a href="https://www.descopera.ro/stiinta/21123644-astronomii-ar-fi-descoperit-sursa-unor-ecouri-bizare-detectate-in-univers" target="_blank" rel="noopener">Astronomii ar fi descoperit sursa unor ecouri bizare detectate în Univers</a><span class="lang">RO</span></span></li>
         <li><span class="yr">Apr 2026</span><span><span class="outlet">BBC Science Focus</span> — <a href="https://www.sciencefocus.com/space/dark-stars-theory" target="_blank" rel="noopener">This radical ‘dark stars’ theory could solve our Universe’s greatest mystery</a></span></li>
         <li><span class="yr">2026</span><span><span class="outlet">Epsiloon</span> — <a href="https://www.epsiloon.com/tous-les-numeros/n61/etoiles_noires_un_nouvel_espoir/" target="_blank" rel="noopener">Étoiles noires : le nouvel espoir</a> (cover story)<span class="lang">FR</span></span></li>
         <li><span class="yr">Jan 2026</span><span><span class="outlet">Phys.org</span> — <a href="https://phys.org/news/2026-01-dark-stars-puzzles-high-redshift.html" target="_blank" rel="noopener">Dark stars could help solve three pressing puzzles of the high-redshift universe</a></span></li>
@@ -1331,8 +1429,23 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
         <li><span class="yr">2025</span><span><span class="outlet">UT Austin, College of Natural Sciences</span> — <a href="https://cns.utexas.edu/news/research/more-dark-star-candidates-found-jwst-data" target="_blank" rel="noopener">More Dark Star Candidates Found in JWST Data</a></span></li>
       </ul>
 
+      <div class="section-head" style="margin-top:44px" id="p-2024" data-sec>
+        <div class="kicker">2024</div>
+        <h2 style="font-size:1.5rem">Dark Big Bang</h2>
+      </div>
+      <ul class="presslist">
+        <li><span class="yr">Dec 2024</span><span><span class="outlet">Space.com</span> — <a href="https://www.space.com/second-big-bang-second-dark-matter" target="_blank" rel="noopener">Could dark matter have been forged in a 'Dark Big Bang?'</a></span></li>
+        <li><span class="yr">Dec 2024</span><span><span class="outlet">CNN Brasil</span> — <a href="https://www.cnnbrasil.com.br/tecnologia/materia-escura-pode-ter-se-originado-em-um-big-bang-escuro-dizem-cientistas/" target="_blank" rel="noopener">Matéria escura pode ter se originado em um “Big Bang Escuro”, dizem cientistas</a><span class="lang">PT</span></span></li>
+        <li><span class="yr">Nov 2024</span><span><span class="outlet">Physics World</span> — <a href="https://physicsworld.com/a/delayed-big-bang-for-dark-matter-could-be-detected-in-gravitational-waves/" target="_blank" rel="noopener">Delayed Big Bang for dark matter could be detected in gravitational waves</a></span></li>
+        <li><span class="yr">Nov 2024</span><span><span class="outlet">Phys.org</span> — <a href="https://phys.org/news/2024-11-reveals-dark-big-scenario.html" target="_blank" rel="noopener">New study reveals possible origins of dark matter in 'Dark Big Bang' scenario</a></span></li>
+        <li><span class="yr">Nov 2024</span><span><span class="outlet">ScienceDaily</span> — <a href="https://www.sciencedaily.com/releases/2024/11/241118125327.htm" target="_blank" rel="noopener">Possible origins of dark matter in 'Dark Big Bang' scenario</a></span></li>
+        <li><span class="yr">Nov 2024</span><span><span class="outlet">Colgate University</span> — <a href="https://www.colgate.edu/news/stories/new-study-reveals-possible-origins-dark-matter-dark-big-bang-scenario" target="_blank" rel="noopener">New Study Reveals Possible Origins of Dark Matter in “Dark Big Bang” Scenario</a></span></li>
+        <li><span class="yr">2024</span><span><span class="outlet">ScienceAlert</span> — <a href="https://www.sciencealert.com/mysterious-dark-big-bang-could-explain-the-origins-of-dark-matter" target="_blank" rel="noopener">Mysterious 'Dark Big Bang' Could Explain The Origins of Dark Matter</a></span></li>
+        <li><span class="yr">2024</span><span><span class="outlet">Earth.com</span> — <a href="https://www.earth.com/news/dark-big-bang-theory-attempts-to-explain-origin-of-dark-matter/" target="_blank" rel="noopener">'Dark Big Bang' theory attempts to explain origin of dark matter</a></span></li>
+      </ul>
+
       <div class="section-head" style="margin-top:44px" id="p-2324" data-sec>
-        <div class="kicker">2023–2024</div>
+        <div class="kicker">2023</div>
         <h2 style="font-size:1.5rem">The first JWST candidates</h2>
       </div>
       <ul class="presslist">
@@ -1358,8 +1471,12 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
         <h2 style="font-size:1.5rem">Before JWST</h2>
       </div>
       <ul class="presslist">
+        <li><span class="yr">2019</span><span><span class="outlet">Discover</span> — <a href="https://www.discovermagazine.com/the-early-universe-may-have-been-filled-with-dark-matter-stars-40529" target="_blank" rel="noopener">The Early Universe May Have Been Filled With Dark Matter Stars</a></span></li>
         <li><span class="yr">2018</span><span><span class="outlet">Astronomy</span> — <a href="https://www.astronomy.com/science/dark-stars-come-into-the-light/" target="_blank" rel="noopener">Dark stars come into the light</a></span></li>
         <li><span class="yr">2016</span><span><span class="outlet">BBC Future</span> — <a href="https://www.bbc.com/future/article/20161214-did-dark-stars-help-form-the-universe" target="_blank" rel="noopener">Did 'dark stars' help form the Universe?</a></span></li>
+        <li><span class="yr">2014</span><span><span class="outlet">Quanta Magazine</span> — <a href="https://www.quantamagazine.org/katherine-freese-in-search-of-dark-stars-20140722/" target="_blank" rel="noopener">In Search of Dark Stars</a></span></li>
+        <li><span class="yr">2010</span><span><span class="outlet">Scientific American</span> — <a href="https://www.scientificamerican.com/article/dark-side-of-black-holes/" target="_blank" rel="noopener">Dark Side of Black Holes: Dark Matter Could Explain the Early Universe’s Giant Black Holes</a></span></li>
+        <li><span class="yr">2010</span><span><span class="outlet">Science &amp; Vie</span> — <a href="https://www.science-et-vie.com/article-magazine/etoiles-noires-elles-seraient-les-premiers-astres" target="_blank" rel="noopener">Étoiles noires : elles seraient les premiers astres</a><span class="lang">FR</span></span></li>
       </ul>
 
       <p style="margin-top:34px;color:var(--muted);font-size:.85rem">Banner image: JWST Advanced Deep Extragalactic Survey (JADES). Image: NASA, ESA, CSA, STScI, Brant Robertson (UC Santa Cruz), Ben Johnson (CfA), Sandro Tacchella (Cambridge), Phill Cargile (CfA).</p>
@@ -1708,6 +1825,67 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
     size(); draw();
     var t; window.addEventListener('resize', function(){ clearTimeout(t); t=setTimeout(size,180); });
   }
+})();
+
+/* ---------- horizontal photo deck ---------- */
+(function(){
+  document.querySelectorAll('.deckwrap').forEach(function(w){
+    var d=w.querySelector('.deck'), prev=w.querySelector('.deckbtn.prev'), next=w.querySelector('.deckbtn.next');
+    if(!d||!prev||!next) return;
+    function step(){ var t=d.querySelector('.thumb');
+      return (t ? t.getBoundingClientRect().width + 12 : 300) * 2; }
+    prev.addEventListener('click', function(){ d.scrollBy({left:-step(), behavior:'smooth'}); });
+    next.addEventListener('click', function(){ d.scrollBy({left: step(), behavior:'smooth'}); });
+    function update(){
+      var max = d.scrollWidth - d.clientWidth - 2;
+      prev.hidden = d.scrollLeft <= 2;
+      next.hidden = max <= 0 || d.scrollLeft >= max;
+    }
+    d.addEventListener('scroll', update, {passive:true});
+    window.addEventListener('resize', update);
+    update();
+  });
+})();
+
+/* ---------- derived counts ----------
+   Every displayed tally is counted from the list it describes, so adding a
+   paper or a mentee updates the stat strips and the Publications blurb with
+   no second edit. Bind a number by giving it data-count="<key>" below; the
+   text already in the element stays as the no-JS fallback.
+
+   Deliberately NOT bound: the "1 APS Apker Award national finalist" and
+   "1 Goldwater Scholar" stats, which have no list to count, and the
+   "three seemingly distinct puzzles" phrase on Home, which counts puzzles
+   rather than the one paper linked beside it.                             */
+(function(){
+  var COUNTS = {
+    'pubs-refereed': '#publist .pub:not(.non):not(.sub)',
+    'pubs-ug':       '#publist .pub[data-ug="1"]',
+    'pubs-first':    '#publist .pub[data-first="1"]',
+    'pubs-non':      '#publist .pub.non',
+    'pubs-sub':      '#publist .pub.sub',
+    'mentees':       '#m-past .mentee'
+  };
+  var WORDS = ['zero','one','two','three','four','five','six',
+               'seven','eight','nine','ten','eleven','twelve'];
+
+  document.querySelectorAll('[data-count]').forEach(function(el){
+    var key = el.getAttribute('data-count'), sel = COUNTS[key];
+    if (!sel) { console.warn('[counts] unknown key "' + key + '"'); return; }
+
+    var n = document.querySelectorAll(sel).length;
+    var shown = el.hasAttribute('data-count-words') && n < WORDS.length
+      ? WORDS[n] : String(n);
+    var authored = el.textContent.trim();
+
+    if (authored !== shown) {
+      /* The page is already correct at this point — this only flags that the
+         hand-written fallback has gone stale and is worth refreshing. */
+      console.warn('[counts] ' + key + ': markup says "' + authored +
+                   '", list has ' + n + '. Update the fallback text.');
+    }
+    el.textContent = shown;
+  });
 })();
 </script>
 </body>
