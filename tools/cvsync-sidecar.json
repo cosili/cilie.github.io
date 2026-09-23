@@ -1,0 +1,86 @@
+{
+  "N1": {
+    "theme": "dark-stars"
+  },
+  "N2": {
+    "theme": "detectors"
+  },
+  "P1": {
+    "theme": "early"
+  },
+  "P10": {
+    "theme": "detectors"
+  },
+  "P11": {
+    "theme": "detectors"
+  },
+  "P12": {
+    "theme": "detectors"
+  },
+  "P13": {
+    "theme": "detectors"
+  },
+  "P14": {
+    "theme": "dark-stars"
+  },
+  "P15": {
+    "theme": "dark-stars"
+  },
+  "P16": {
+    "theme": "detectors"
+  },
+  "P17": {
+    "theme": "detectors"
+  },
+  "P18": {
+    "theme": "early"
+  },
+  "P19": {
+    "theme": "detectors"
+  },
+  "P2": {
+    "theme": "dark-stars"
+  },
+  "P20": {
+    "theme": "dark-stars"
+  },
+  "P21": {
+    "theme": "dark-stars seeds"
+  },
+  "P22": {
+    "theme": "seeds"
+  },
+  "P23": {
+    "theme": "dark-stars"
+  },
+  "P24": {
+    "theme": "dark-stars"
+  },
+  "P3": {
+    "theme": "dark-stars"
+  },
+  "P4": {
+    "theme": "dark-stars"
+  },
+  "P5": {
+    "theme": "early"
+  },
+  "P6": {
+    "theme": "early"
+  },
+  "P7": {
+    "theme": ""
+  },
+  "P8": {
+    "theme": ""
+  },
+  "P9": {
+    "theme": "detectors"
+  },
+  "S1": {
+    "theme": "seeds"
+  },
+  "S2": {
+    "theme": "seeds"
+  }
+}
