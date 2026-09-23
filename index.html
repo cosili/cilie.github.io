@@ -148,6 +148,9 @@ nav.tabs .ditem{font:inherit;font-size:.9rem;font-weight:500;text-align:left;wid
 nav.tabs .ditem:hover,nav.tabs .ditem:focus-visible{background:rgba(246,214,138,.14);color:var(--gold-soft)}
 @media(min-width:861px){nav.tabs{overflow:visible}}
 @media(max-width:860px){.dropdown{display:none}nav.tabs .caret{display:none}}
+/* a menu left hanging over the page while reading is distracting, so it is
+   dropped as soon as the page moves and restored on the next pointer move */
+nav.tabs.nomenu .dropdown{opacity:0;visibility:hidden;transform:translateY(-6px)}
 
 /* the hover menus cannot open on a touch screen, and nav.tabs scrolls
    horizontally there so an absolute menu would be clipped: below 861px the
@@ -1732,6 +1735,10 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
     var el=e.target.closest('[data-tab]');
     if(!el) return;
     e.preventDefault();
+    /* clicking a tab focuses it, and :focus-within would hold its menu open.
+       e.detail is 0 for keyboard activation, so only a pointer click drops
+       focus and the menus stay reachable by keyboard. */
+    if(e.detail) el.blur();
     show(el.dataset.tab, true);
   });
   window.addEventListener('popstate', function(){ show((location.hash||'#home').slice(1), false); });
@@ -1770,6 +1777,26 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
   document.querySelectorAll('[data-pubmode]').forEach(function(b){
     b.addEventListener('click', function(){ if(window.__pubMode) window.__pubMode(b.dataset.pubmode); });
   });
+  var tabsNav=document.querySelector('nav.tabs');
+  if(tabsNav){
+    var muted=false;
+    window.addEventListener('scroll', function(){
+      if(muted) return;
+      muted=true; tabsNav.classList.add('nomenu');
+      var ae=document.activeElement;
+      if(tabsNav.contains(ae)){
+        /* leave keyboard focus where it is; only a click-focused tab is dropped */
+        var byKeyboard=false;
+        try{ byKeyboard=ae.matches(':focus-visible'); }catch(err){}
+        if(!byKeyboard) ae.blur();
+      }
+    }, {passive:true});
+    window.addEventListener('pointermove', function(){
+      if(!muted) return;
+      muted=false; tabsNav.classList.remove('nomenu');
+    }, {passive:true});
+  }
+
   /* delegated, because the chip row is built after load */
   document.addEventListener('click', function(e){
     var d=e.target.closest('[data-target]');
