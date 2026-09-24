@@ -911,12 +911,20 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
       var banner=img.closest('.banner');
       if(banner){
         banner.classList.add('browsable');
+        function half(e){ var r=banner.getBoundingClientRect(); return (e.clientX-r.left) < r.width/2 ? -1 : 1; }
         banner.addEventListener('click', function(e){
           if(e.target.closest('a')) return;                       /* the citation link */
           var sel=window.getSelection && window.getSelection();
           if(sel && String(sel).length) return;                   /* they were selecting text */
-          at=(at+1) % DECK.length; draw();
+          at=(at + half(e) + DECK.length) % DECK.length; draw();
         });
+        /* left half goes back, right half forward -- the cursor is the only
+           thing that says so */
+        banner.addEventListener('mousemove', function(e){
+          banner.style.cursor = e.target.closest('a') ? 'pointer'
+                              : (half(e)<0 ? 'w-resize' : 'e-resize');
+        });
+        banner.addEventListener('mouseleave', function(){ banner.style.cursor=''; });
       }
     })();
     </script>
