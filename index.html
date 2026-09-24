@@ -243,6 +243,16 @@ section.cream{background:var(--cream);border-block:1px solid var(--line)}
 /* page banner for non-home tabs */
 .banner{position:relative;background:var(--space);color:#fff;overflow:hidden}
 .banner img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:50% 42%;opacity:.85}
+.banner.browsable{cursor:pointer}
+/* provenance for the rotating board, quiet in the corner */
+.banner .boardcap{position:absolute;right:16px;bottom:12px;z-index:2;margin:0;
+  font-size:.76rem;line-height:1.35;color:rgba(234,240,252,.92);
+  /* the boards are white chalk, so the text needs its own ground to sit on */
+  background:rgba(7,12,24,.72);border:1px solid rgba(255,255,255,.10);
+  padding:4px 12px;border-radius:999px;-webkit-backdrop-filter:blur(3px);backdrop-filter:blur(3px)}
+.banner .boardcap a{color:inherit;text-decoration:none;border-bottom:1px dotted rgba(234,240,252,.5)}
+.banner .boardcap a:hover{color:var(--gold-soft);border-bottom-color:var(--gold-soft)}
+@media(max-width:700px){.banner .boardcap{display:none}}
 .banner .veil{position:absolute;inset:0;background:
   linear-gradient(100deg,rgba(7,12,24,.90) 0%,rgba(7,12,24,.78) 38%,rgba(7,12,24,.34) 72%,rgba(7,12,24,.18) 100%)}
 .banner .inner{position:relative;max-width:var(--wrap);margin:0 auto;padding:64px 20px 60px;min-height:280px;
@@ -826,7 +836,77 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
 <!-- ===================== PUBLICATIONS ===================== -->
 <div class="panel" id="publications">
   <div class="banner">
-    <img src="assets/board-pubs.jpg" alt="Blackboard holding the handwritten outline of a paper in progress: introduction, dark matter capture in the first stars, and results on mass scaling relations" style="object-position:50% 50%">
+    <img id="pubboard" alt="Blackboard holding the working behind one of these papers">
+    <noscript><img src="assets/pub-board-1.jpg" alt="Blackboard holding the working behind one of these papers" style="object-position:50% 38%"></noscript>
+    <p class="boardcap" id="boardcap"></p>
+    <script>
+    /* The banner rotates through boards photographed while these papers were
+       being worked out. One paper per day, cycling; each time a paper comes
+       round it shows the next of its boards, so every picture is seen and none
+       repeats before the others have had a turn. Stable for the whole day.
+       ?board=N (1-8) forces one, for previewing. */
+    (function(){
+      var PAPERS=[
+        {cite:'JCAP 09, 017 (2025)',
+         href:'https://iopscience.iop.org/article/10.1088/1475-7516/2025/09/017',
+         boards:[{f:'pub-board-1.jpg', y:'38%'}]},
+        {cite:'PRD 104, 123031 (2021)',
+         href:'https://journals.aps.org/prd/abstract/10.1103/PhysRevD.104.123031',
+         boards:[{f:'pub-board-2.jpg', y:'50%'}, {f:'pub-board-3.jpg', y:'35%'}]},
+        {cite:'ApJ 970, 159 (2024)',
+         href:'https://iopscience.iop.org/article/10.3847/1538-4357/ad5556',
+         boards:[{f:'pub-board-4.jpg', y:'22%'}]},
+        {cite:'PRD 110, 103522 (2024)',
+         href:'https://journals.aps.org/prd/abstract/10.1103/PhysRevD.110.103522',
+         boards:[{f:'pub-board-5.jpg', y:'40%'}]},
+        {cite:'ApJ 932, 46 (2022)',
+         href:'https://iopscience.iop.org/article/10.3847/1538-4357/ac651b',
+         boards:[{f:'pub-board-6.jpg', y:'45%'}]}
+      ];
+      var img=document.getElementById('pubboard'), cap=document.getElementById('boardcap');
+      if(!img) return;
+
+      /* the whole deck, in picture order, each remembering its paper */
+      var DECK=[];
+      PAPERS.forEach(function(P){ P.boards.forEach(function(B){ DECK.push({b:B, p:P}); }); });
+      DECK.sort(function(x,y){ return x.b.f.localeCompare(y.b.f); });
+
+      var day=Math.floor(Date.now()/864e5), start=-1;
+      var forced=(location.search.match(/[?&]board=(\d+)/)||[])[1];
+      if(forced){
+        var f='pub-board-'+parseInt(forced,10)+'.jpg';
+        DECK.forEach(function(d,i){ if(d.b.f===f) start=i; });
+      }
+      if(start<0){
+        var paper=PAPERS[day % PAPERS.length];
+        var board=paper.boards[Math.floor(day/PAPERS.length) % paper.boards.length];
+        DECK.forEach(function(d,i){ if(d.b.f===board.f) start=i; });
+      }
+
+      var at=start;
+      function draw(){
+        var d=DECK[at];
+        img.src='assets/'+d.b.f;
+        img.style.objectPosition='50% '+d.b.y;
+        if(cap) cap.innerHTML='From the work behind <a href="'+d.p.href+'" target="_blank" rel="noopener">'+d.p.cite+'</a>';
+      }
+      draw();
+
+      /* Click the banner -- anywhere but a link -- to step through the rest of
+         the deck, for anyone who would rather not wait twenty days to see it.
+         Deliberately unannounced; the pointer cursor is the only hint. */
+      var banner=img.closest('.banner');
+      if(banner){
+        banner.classList.add('browsable');
+        banner.addEventListener('click', function(e){
+          if(e.target.closest('a')) return;                       /* the citation link */
+          var sel=window.getSelection && window.getSelection();
+          if(sel && String(sel).length) return;                   /* they were selecting text */
+          at=(at+1) % DECK.length; draw();
+        });
+      }
+    })();
+    </script>
     <div class="veil"></div>
     <div class="inner">
       <div class="eyebrow" style="color:var(--gold-soft)">Publications</div>
