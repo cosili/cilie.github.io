@@ -233,7 +233,10 @@ button.stat.prize span{margin-top:6px;font-size:.82rem;letter-spacing:.12em}
 
 .stat b{display:block;font-family:'Fraunces',serif;font-size:1.85rem;color:var(--gold-soft);line-height:1.1}
 .stat span{font-size:.82rem;color:#b9c4d8;letter-spacing:.03em}
-@media(max-width:760px){.stats .row{grid-template-columns:repeat(2,1fr);gap:18px}}
+.stats .row.four{grid-template-columns:repeat(4,1fr)}
+/* inline on the element, four 1fr columns beat the media query below and
+   could not shrink under their content, so the strip ran past a phone */
+@media(max-width:760px){.stats .row,.stats .row.four{grid-template-columns:repeat(2,1fr);gap:18px}}
 
 /* ---------- generic sections ---------- */
 section.block{padding:50px 0}
@@ -1245,7 +1248,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
   </div>
 
   <div class="stats" style="background:var(--space-2)">
-    <div class="row" style="grid-template-columns:repeat(4,1fr)">
+    <div class="row four">
       <button class="stat" type="button" data-tab="mentoring" data-target="m-past"><b data-count="mentees">11</b><span>honors &amp; high-honors mentees</span></button>
       <button class="stat" type="button" data-tab="publications" data-pubmode="ug"><b data-count="pubs-ug">15</b><span>papers with undergraduate coauthors</span></button>
       <button class="stat" type="button" data-tab="mentoring" data-target="m-paulin"><b>1</b><span>APS Apker Award national finalist</span></button>
@@ -2033,14 +2036,24 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
      it keeps layout while hidden, so it can be measured up front. */
   function placePop(x){
     var pop=x.querySelector('.pop'); if(!pop) return;
+    var had=pop.style.marginLeft;
     pop.style.marginLeft='';
     var pad=10, vw=document.documentElement.clientWidth, r=pop.getBoundingClientRect(), shift=0;
+    if(!r.width){ pop.style.marginLeft=had; return; }  /* tab not showing: keep what it had */
     if(r.right>vw-pad) shift=(vw-pad)-r.right;      /* pull it back from the right */
     if(r.left+shift<pad) shift=pad-r.left;          /* but not past the left */
     if(shift) pop.style.marginLeft=Math.round(shift)+'px';
   }
-  window.addEventListener('resize', function(){
-    phs.forEach(function(x){ var p=x.querySelector('.pop'); if(p) p.style.marginLeft=''; });
+  /* Place them all up front, not only when one is opened: a panel is laid out
+     even while hidden, so a citation panel hanging off the right of a phone
+     widens the page and lets it scroll sideways. Re-place whenever the layout
+     could have changed. */
+  function placeAll(){ phs.forEach(placePop); }
+  placeAll();
+  window.addEventListener('resize', placeAll);
+  window.addEventListener('load', placeAll);
+  document.addEventListener('click', function(e){
+    if(e.target.closest('nav.tabs [data-tab]')) setTimeout(placeAll, 0);
   });
 
   phs.forEach(function(x){
