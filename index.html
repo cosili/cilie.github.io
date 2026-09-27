@@ -172,6 +172,9 @@ nav.subtabs{display:none}
 /* authors above the reference, so a long citation does not become a wall of link */
 .card .byline{color:var(--muted);margin-right:2px}
 
+/* the mentoring block lost the photograph beside it; keep the measure readable */
+.prose-wide{max-width:72ch}
+
 /* ---------- panels ---------- */
 .panel{display:none;animation:fade .38s ease}
 .panel.active{display:block}
@@ -651,11 +654,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
 
   <section class="block">
     <div class="wrap">
-      <div class="grid g2" style="gap:48px;align-items:center">
-        <figure style="margin:0;border-radius:var(--radius);overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow);background:#fff">
-          <img src="assets/apker.jpg" alt="Cosmin Ilie with Jillian Paulin at the blackboard">
-          <figcaption style="font-size:.85rem;color:var(--muted);padding:11px 16px">In the lab with Jillian Paulin ('23), Goldwater Scholar and LeRoy Apker national finalist.</figcaption>
-        </figure>
+      <div class="prose-wide">
         <div>
           <div class="kicker">Mentoring</div>
           <h2>Undergraduates: from students to collaborators</h2>
