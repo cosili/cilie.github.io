@@ -848,7 +848,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
     <div class="inner">
       <div class="eyebrow" style="color:var(--gold-soft)">Publications</div>
       <h2>Papers</h2>
-      <p><span data-count="pubs-refereed">24</span> refereed articles, <span data-count="pubs-non" data-count-words>two</span> non-refereed companions, and <span data-count="pubs-sub" data-count-words>two</span> manuscripts under review. Titles link to the journal or preprint record.</p>
+      <p><span data-count="pubs-refereed">25</span> refereed articles, <span data-count="pubs-non" data-count-words>two</span> non-refereed companions, and <span data-count="pubs-sub" data-count-words>one</span> <span data-count-noun="pubs-sub" data-plural="manuscripts">manuscript</span> under review. Titles link to the journal or preprint record.</p>
     </div>
     <p class="boardcap" id="boardcap"></p>
     <script>
@@ -986,11 +986,11 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
           <span class="yr">2026</span>
         </div>
 
-        <div class="pub sub" data-theme="seeds" data-ug="0" data-first="0">
+        <div class="pub" data-theme="seeds" data-ug="0" data-first="0">
           <div>
-            <div class="t"><a href="https://arxiv.org/abs/2511.08578" target="_blank" rel="noopener">Early Formation of Supermassive Black Holes via Dark Star Gravitational Instability</a><span class="note">under review</span></div>
+            <div class="t"><a href="https://arxiv.org/abs/2511.08578" target="_blank" rel="noopener">Early Formation of Supermassive Black Holes via Dark Star Gravitational Instability</a></div>
             <div class="a">K. Freese, G. M. Fuller, S. Ghodla, C. Ilie, K. S. Kehrer, T. Rindler-Daller, and E. I. Sfakianakis</div>
-            <div class="j"><em>Proceedings of the National Academy of Sciences</em> — revise and resubmit, revision submitted September 2026 · arXiv:2511.08578</div>
+            <div class="j"><em>Proceedings of the National Academy of Sciences</em> (Accepted Oct 30 2026). arXiv:2511.08578</div>
           </div>
           <span class="yr">2025</span>
         </div>
@@ -2184,6 +2184,16 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
                    '", list has ' + n + '. Update the fallback text.');
     }
     el.textContent = shown;
+  });
+
+  /* a noun that has to agree with one of those counts, so "one manuscript"
+     does not become "one manuscripts" the next time a paper is accepted */
+  document.querySelectorAll('[data-count-noun]').forEach(function(el){
+    var key = el.getAttribute('data-count-noun'), sel = COUNTS[key];
+    if (!sel) { console.warn('[counts] unknown key "' + key + '"'); return; }
+    var n = typeof sel === 'function' ? sel() : document.querySelectorAll(sel).length;
+    var one = el.getAttribute('data-singular') || el.textContent.trim();
+    el.textContent = n === 1 ? one : (el.getAttribute('data-plural') || one + 's');
   });
 
   /* A phrase like "four papers" that owns a popover: the number is however
