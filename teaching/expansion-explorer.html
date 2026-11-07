@@ -359,7 +359,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       }));
       if(isFinite(aLo)&&isFinite(aHi)){
         K0=Math.floor(Math.log10(Math.max(aLo,A_MIN)));
-        K1=Math.ceil(Math.log10(Math.min(aHi,y1)));
+        K1=Math.ceil(Math.log10(aHi));   /* a is not capped at 2.5 on a log axis */
         if(K1<=K0) K1=K0+1;
       }
     }
@@ -439,7 +439,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       ctx.strokeStyle=md.color; ctx.lineWidth=md.w; ctx.setLineDash(md.dash); ctx.beginPath(); let started=false;
       md.r.pts.forEach(p=>{ if(p[0]<x0-1||p[0]>x1+1) return;
         if(logX && p[0]-tBang<=0){ started=false; return; }   /* before the origin of a log age axis */
-        const px=X(p[0]),py=Y(Math.min(p[1],y1+0.5)); started?ctx.lineTo(px,py):ctx.moveTo(px,py); started=true;});
+        const px=X(p[0]),py=Y(logY?p[1]:Math.min(p[1],y1+0.5)); started?ctx.lineTo(px,py):ctx.moveTo(px,py); started=true;});
       ctx.stroke(); ctx.setLineDash([]);
     });
     // picked moment
