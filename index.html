@@ -1857,7 +1857,32 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
   var TABS=['home','research','publications','mentoring','teaching','press','cv'];
   var current='home';
 
-  function show(name, push){
+  /* A tab is #name; a section inside it is #name/slug, where the slug is the
+     section's id without its prefix (t-resources -> resources). Scoping the
+     slug to its tab keeps the research t-* ids from colliding with teaching's. */
+  var SECSEL='[data-sec],.area[id],.mentee[id]';
+  function slugOf(id){ return id.replace(/^[a-z]+-/,''); }
+  function findSection(tab, slug){
+    if(!slug) return null;
+    var panel=document.getElementById(tab);
+    if(!panel) return null;
+    var els=panel.querySelectorAll(SECSEL);
+    for(var i=0;i<els.length;i++){ if(els[i].id && slugOf(els[i].id)===slug) return els[i]; }
+    return null;
+  }
+  function parseHash(){
+    var parts=(location.hash||'#home').slice(1).split('/');
+    return {tab:parts[0]||'home', slug:parts[1]||''};
+  }
+  var lastHash=null;
+  function setHash(h, push){
+    if(location.hash!==h){
+      if(push) history.pushState({},'',h); else history.replaceState({},'',h);
+    }
+    lastHash=location.hash;
+  }
+
+  function show(name, push, slug){
     if(TABS.indexOf(name)<0) name='home';
     current=name;
     TABS.forEach(function(t){
@@ -1871,8 +1896,14 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
     document.title = (name==='home' ? 'Cosmin Ilie — Astrophysicist & Cosmologist'
       : name.charAt(0).toUpperCase()+name.slice(1)+' — Cosmin Ilie');
     buildSubtabs(name);
-    if(push && location.hash!=='#'+name){ history.pushState({tab:name},'','#'+name); }
-    window.scrollTo({top:0,behavior:'instant' in document.documentElement.style ? 'instant' : 'auto'});
+    /* an unknown slug degrades to the plain tab rather than 404-ing the view */
+    var sec=findSection(name, slug);
+    if(!sec) slug='';
+    setHash('#'+name+(slug?'/'+slug:''), push);
+    /* deferred for the same reason the menu items defer: the panel has only
+       just been shown, and the scroll needs its layout to exist first */
+    if(sec) requestAnimationFrame(function(){ sec.scrollIntoView({block:'start'}); });
+    else window.scrollTo({top:0,behavior:'instant' in document.documentElement.style ? 'instant' : 'auto'});
   }
 
   document.addEventListener('click', function(e){
@@ -1883,10 +1914,33 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
        e.detail is 0 for keyboard activation, so only a pointer click drops
        focus and the menus stay reachable by keyboard. */
     if(e.detail) el.blur();
-    show(el.dataset.tab, true);
+    /* a menu item carries both: open the tab and land on its section in one step */
+    var tgt=el.dataset.target ? document.getElementById(el.dataset.target) : null;
+    show(el.dataset.tab, true, tgt?slugOf(tgt.id):'');
   });
-  window.addEventListener('popstate', function(){ show((location.hash||'#home').slice(1), false); });
-  show((location.hash||'#home').slice(1), false);
+  function route(){
+    if(location.hash===lastHash) return;
+    var p=parseHash();
+    show(p.tab, false, p.slug);
+  }
+  window.addEventListener('popstate', route);
+  window.addEventListener('hashchange', route);
+
+  var first=parseHash();
+  show(first.tab, false, first.slug);
+  if(first.slug){
+    /* the header height and the images settle after this runs, so land it
+       again once they have -- unless the reader has already moved. */
+    var moved=false;
+    ['wheel','touchstart','keydown'].forEach(function(ev){
+      window.addEventListener(ev, function(){ moved=true; }, {passive:true, once:true});
+    });
+    window.addEventListener('load', function(){
+      if(moved) return;
+      var s=findSection(first.tab, first.slug);
+      if(s) s.scrollIntoView({block:'start'});
+    });
+  }
 
   document.getElementById('yr').textContent=new Date().getFullYear();
 
@@ -1945,7 +1999,10 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
   document.addEventListener('click', function(e){
     var d=e.target.closest('[data-target]');
     if(!d) return;
+    if(d.hasAttribute('data-tab')) return; /* the tab handler already routed it */
     var t=document.getElementById(d.dataset.target);
+    /* keep the address bar in step so any section can be linked to */
+    if(t) setHash('#'+current+'/'+slugOf(t.id), false);
     requestAnimationFrame(function(){
       if(t) t.scrollIntoView({behavior:'smooth',block:'start'});
       d.blur();
