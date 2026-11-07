@@ -33,6 +33,11 @@ h1{font:600 1.7rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
 .ctrl{margin-bottom:16px}
 .ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-weight:600}
 .ctrl label output{font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent)}
+/* the value is typed as well as read, for settings a slider step cannot land on */
+.ctrl label .numin{font:inherit;font-weight:700;color:var(--accent);background:transparent;
+  border:1px solid var(--axis);border-radius:6px;padding:1px 4px;width:9ch;text-align:right;
+  font-variant-numeric:tabular-nums}
+.ctrl label .numin:focus{outline:2px solid var(--accent);outline-offset:1px}
 .ctrl small{color:var(--muted);display:block;margin-top:2px}
 input[type=range]{width:100%;accent-color:var(--accent)}
 /* Line the moment slider up with the plot above it. The canvas reserves 56px
@@ -135,12 +140,12 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         <small id="h0s"></small>
       </div>
       <div class="ctrl">
-        <label for="om">Ωm (matter) <output id="omo"></output></label>
-        <input id="om" type="range" min="0" max="3" step="0.01" value="0.3">
+        <label>Ωm (matter) <input id="omo" class="numin" type="number" min="0" max="3" step="0.001" inputmode="decimal" aria-label="Ωm value"></label>
+        <input id="om" type="range" min="0" max="3" step="0.001" value="0.3" aria-label="Ωm (matter)">
       </div>
       <div class="ctrl">
-        <label for="ol">ΩΛ (vacuum energy) <output id="olo"></output></label>
-        <input id="ol" type="range" min="-1" max="5" step="0.0005" value="0.7">
+        <label>ΩΛ (vacuum energy) <input id="olo" class="numin" type="number" min="-1" max="5" step="0.0001" inputmode="decimal" aria-label="ΩΛ value"></label>
+        <input id="ol" type="range" min="-1" max="5" step="0.0001" value="0.7" aria-label="ΩΛ (vacuum energy)">
         <small id="geo"></small>
       </div>
       <div class="toggles" style="margin-bottom:12px"><label><input type="checkbox" id="tRad"> Include radiation from the CMB <small id="rado" style="color:var(--muted)"></small></label></div>
@@ -277,6 +282,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
 
   const cv=$('cv'), ctx=cv.getContext('2d');
   function css(n){return getComputedStyle(root).getPropertyValue(n).trim();}
+  /* show at most 4 decimals and no trailing zeros: 0.3, not 0.3000 */
+  function setNum(id,v){ const el=$(id); if(document.activeElement!==el) el.value=String(+(+v).toFixed(4)); }
   function state(){return {H0:+$('h0').value,Om:+$('om').value,OL:+$('ol').value,past:+$('past').value,fut:+$('fut').value};}
   let pick={mode:'time',t:0,z:null}; let geom=null;
 
@@ -303,7 +310,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     const Or=OrOf(s.H0);
     $('h0o').textContent=s.H0.toFixed(1)+' km/s/Mpc';
     $('h0s').textContent='= '+(s.H0/GYR).toFixed(4)+' per billion years (1/H₀ = '+(GYR/s.H0).toFixed(1)+' billion years)';
-    $('omo').textContent=s.Om.toFixed(2); $('olo').textContent=(Math.abs(s.OL*100-Math.round(s.OL*100))>1e-6)?s.OL.toFixed(4):s.OL.toFixed(2);
+    setNum('omo',s.Om); setNum('olo',s.OL);
     $('rado').textContent='(Ω_rad = '+(4.15e-5/Math.pow(s.H0/100,2)).toExponential(1)+')';
     const Ok=1-s.Om-s.OL-Or;
     $('geo').textContent='Ωm + ΩΛ = '+(s.Om+s.OL).toFixed(2)+(Math.abs(Ok)<0.005?' (flat)':(Ok>0?' (open)':' (closed)'));
@@ -673,6 +680,15 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   document.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{const [mm,l]=b.dataset.p.split(',');$('h0').value=70;$('om').value=mm;$('ol').value=l;if(b.dataset.past)$('past').value=b.dataset.past;if(b.dataset.fut)$('fut').value=b.dataset.fut;draw();}));
 
   ['h0','om','ol','past','fut','tEmpty','tMatter','tOurs','tRad','logX','logY'].forEach(id=>$(id).addEventListener('input',draw));
+  /* Typing a value drives the slider, which clamps it to the allowed range.
+     The box is only rewritten when it is not the one being typed in. */
+  [['omo','om'],['olo','ol']].forEach(([numId,rangeId])=>{
+    $(numId).addEventListener('input',()=>{
+      const v=$(numId).value; if(v==='') return;
+      $(rangeId).value=v; draw();
+    });
+    $(numId).addEventListener('blur',draw);
+  });
   window.addEventListener('resize',draw);
   draw();
 })();
