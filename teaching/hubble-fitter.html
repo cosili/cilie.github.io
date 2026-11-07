@@ -94,7 +94,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         <label for="ds">Data set</label>
         <select id="ds">
           <option value="hubble">Hubble 1929: 24 galaxies (distance, velocity)</option>
-          <option value="sn">Riess et al. 1998: 27 nearby Type Ia supernovae</option>
+          <option value="sn">Riess 1998 nearby: 27 supernovae (z &lt; 0.13)</option>
+          <option value="sn50">Riess 1998 full: 50 supernovae (z up to 0.97)</option>
           <option value="custom">Your own data (paste below)</option>
         </select>
         <small id="dsnote"></small>
@@ -153,7 +154,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     <p><strong>Distance–velocity data.</strong> Hubble's law says v = H₀ d, a straight line through the origin, so H₀ is the slope. The fitter finds the slope that makes the squared vertical misses as small as possible (least squares). The "with an intercept" fit also lets the line miss the origin; if the intercept b comes out large compared with the scatter, something is off. The age scale 1/H₀ is converted with 1 Mpc = 3.086 × 10¹⁹ km and 1 year = 3.156 × 10⁷ s.</p>
     <p><strong>Supernova data.</strong> The distance modulus is μ = m − M = 5 log₁₀(D / 1 Mpc) + 25. Nearby, D = cz / H₀, so μ = 5 log₁₀(cz) + 25 − 5 log₁₀ H₀: a straight line of slope 5 against log₁₀(cz). With the slope fixed at 5, the fit finds the intercept b, and then H₀ = 10<sup>(25 − b)/5</sup> km/s/Mpc. H₀ sits entirely in the intercept, and the intercept depends on the absolute magnitude M from the Cepheid calibration.</p>
   </details>
-  <p class="foot">Data: E. Hubble 1929, PNAS 15, 168, Table 1 (distances in Mpc, velocities in km/s, not corrected for the Sun's motion). A. Riess et al. 1998, AJ 116, 1009, Table 10 (MLCS distance moduli of nearby supernovae; cz in the CMB frame). Built for the first-year seminar “Our Universe: 95% Unknown.” Free to use for teaching.</p>
+  <p class="foot">Data: E. Hubble 1929, PNAS 15, 168, Table 1 (distances in Mpc, velocities in km/s, not corrected for the Sun's motion). A. Riess et al. 1998, AJ 116, 1009, Table 10 for the nearby set and Tables 5, 7 and 9 as well for the full one (MLCS distance moduli; cz in the CMB frame). Built for the first-year seminar “Our Universe: 95% Unknown.” Free to use for teaching.</p>
 </div>
 
 <script>
@@ -167,6 +168,9 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
 
   const HUBBLE=[["SMC",0.032,170],["LMC",0.034,290],["NGC 6822",0.214,-130],["NGC 598 (M33)",0.263,-70],["NGC 221 (M32)",0.275,-185],["NGC 224 (M31)",0.275,-220],["NGC 5457",0.45,200],["NGC 4736",0.5,290],["NGC 5194",0.5,270],["NGC 4449",0.63,200],["NGC 4214",0.8,300],["NGC 3031",0.9,-30],["NGC 3627",0.9,650],["NGC 4826",0.9,150],["NGC 5236",0.9,500],["NGC 1068",1.0,920],["NGC 5055",1.1,450],["NGC 7331",1.1,500],["NGC 4258",1.4,500],["NGC 4151",1.7,960],["NGC 4382",2.0,500],["NGC 4472",2.0,850],["NGC 4486",2.0,800],["NGC 4649",2.0,1090]];
   const SN=[["SN 1995D",3.398,33.01],["SN 1995E",3.547,33.60],["SN 1992al",3.625,33.92],["SN 1995bd",3.679,34.15],["SN 1994S",3.685,34.27],["SN 1992bo",3.734,34.72],["SN 1992bc",3.779,34.87],["SN 1995ak",3.820,35.15],["SN 1994M",3.859,35.39],["SN 1993H",3.871,35.20],["SN 1992ag",3.891,35.37],["SN 1992P",3.896,35.76],["SN 1996C",3.924,35.98],["SN 1992bg",4.024,36.26],["SN 1994T",4.030,36.19],["SN 1992bl",4.111,36.26],["SN 1992bh",4.130,36.91],["SN 1995ac",4.166,36.85],["SN 1993ag",4.177,36.80],["SN 1990af",4.178,36.53],["SN 1993O",4.189,37.03],["SN 1992bs",4.283,37.61],["SN 1992ae",4.350,37.80],["SN 1992bp",4.379,37.65],["SN 1992br",4.418,38.21],["SN 1992aq",4.481,38.41],["SN 1996ab",4.572,39.01]];
+  /* Riess et al. 1998 in full: the 34 nearby SNe above plus the 16 high-z
+     ones, out to z = 0.97. MLCS distance moduli, from Tables 5, 7, 9 and 10. */
+const SN50=[["SN 1994U",3.111,31.72],["SN 1997bp",3.363,32.81],["SN 1995D",3.398,33.01],["SN 1995E",3.547,33.6],["SN 1992al",3.625,33.92],["SN 1995bd",3.679,34.15],["SN 1994S",3.685,34.27],["SN 1992bo",3.734,34.72],["SN 1992bc",3.779,34.87],["SN 1995ak",3.82,35.15],["SN 1994M",3.859,35.39],["SN 1996V",3.87,35.35],["SN 1993H",3.871,35.2],["SN 1992ag",3.891,35.37],["SN 1992P",3.896,35.76],["SN 1996C",3.924,35.98],["SN 1992bg",4.024,36.26],["SN 1994T",4.03,36.19],["SN 1992bl",4.111,36.26],["SN 1992bh",4.13,36.91],["SN 1995ac",4.166,36.85],["SN 1993ag",4.177,36.8],["SN 1990af",4.178,36.53],["SN 1994C",4.189,36.72],["SN 1993O",4.189,37.03],["SN 1995M",4.202,37.12],["SN 1992bs",4.283,37.61],["SN 1995ae",4.308,37.58],["SN 1992ae",4.35,37.8],["SN 1992bp",4.379,37.65],["SN 1992br",4.418,38.21],["SN 1994B",4.431,38.51],["SN 1992aq",4.481,38.41],["SN 1996ab",4.572,39.01],["SN 1996R",4.681,39.08],["SN 1997I",4.707,39.95],["SN 1995ap",4.839,40.33],["SN 1996T",4.857,40.68],["SN 1996J",4.954,41.38],["SN 1995ao",4.954,40.74],["SN 1996K",5.057,41.63],["SN 1996E",5.11,41.74],["SN 1996U",5.11,42.55],["SN 1997ce",5.12,41.95],["SN 1995K",5.158,42.45],["SN 1997cj",5.176,42.4],["SN 1996I",5.233,42.76],["SN 1996H",5.269,42.98],["SN 1997ap",5.396,43.67],["SN 1997ck",5.464,44.39]];
 
   let pts=[], type='lin', off=new Set(), custom=[];
   function load(){
@@ -174,6 +178,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     $('customBox').hidden=ds!=='custom';
     if(ds==='hubble'){type='lin'; pts=HUBBLE.map(p=>({n:p[0],x:p[1],y:p[2]})); $('dsnote').textContent='Distances in Mpc (millions of parsecs), velocities in km/s.';}
     else if(ds==='sn'){type='mag'; pts=SN.map(p=>({n:p[0],x:p[1],y:p[2]})); $('dsnote').textContent='x = log₁₀(cz), with cz in km/s; y = distance modulus μ (magnitudes).';}
+    else if(ds==='sn50'){type='mag'; pts=SN50.map(p=>({n:p[0],x:p[1],y:p[2]})); $('dsnote').textContent='The same, with the 16 high-z supernovae added, out to z = 0.97. A straight line of slope 5 is the nearby approximation, so watch it miss further out.';}
     else {type=$('ctype').value; pts=custom.slice(); $('dsnote').textContent='Paste two or three columns, then press "Use these data".';}
     $('linFits').hidden=type!=='lin'; $('magFits').hidden=type!=='mag'; $('calBox').hidden=type!=='mag';
     $('cutvar').textContent=type==='lin'?'distance':'log₁₀(cz)'; $('cutunit').textContent=type==='lin'?'Mpc':'';
@@ -283,7 +288,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   $('reset').addEventListener('click',()=>{off=new Set(); $('cut').value=''; draw();});
   $('csv').addEventListener('click',()=>{ const P=included(); const head=type==='lin'?'name,distance_Mpc,velocity_km_s':'name,log10_cz,distance_modulus_mu';
     const txt=head+'\n'+P.map(p=>'"'+p.n+'",'+p.x+','+(type==='lin'?p.y:p.y.toFixed(3))).join('\n');
-    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv'})); a.download=($('ds').value==='hubble'?'hubble1929':$('ds').value==='sn'?'riess1998_nearby_SNe':'my_data')+'.csv'; document.body.appendChild(a); a.click(); a.remove(); });
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv'})); a.download=($('ds').value==='hubble'?'hubble1929':$('ds').value==='sn'?'riess1998_nearby_SNe':$('ds').value==='sn50'?'riess1998_all_SNe':'my_data')+'.csv'; document.body.appendChild(a); a.click(); a.remove(); });
   $('ds').addEventListener('change',load);
   $('ctype').addEventListener('change',()=>{ if($('ds').value==='custom') load(); });
   $('cload').addEventListener('click',parseCustom);
