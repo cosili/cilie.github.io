@@ -42,6 +42,8 @@ h1{font:600 1.7rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
 .ctrl label .numwrap{display:inline-flex;align-items:baseline;gap:5px}
 .ctrl label .unit{font-weight:700;color:var(--accent)}
 .ctrl small{color:var(--muted);display:block;margin-top:2px}
+#refoff{display:block;color:var(--muted);font-size:.8rem;margin:2px 0 4px}
+#refoff[hidden]{display:none}
 input[type=range]{width:100%;accent-color:var(--accent)}
 /* Line the moment slider up with the plot above it. The canvas reserves 56px
    on the left for the y axis and 16px on the right, so the data area is inset
@@ -164,6 +166,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       <div class="toggles">
         <div style="font-size:.92rem;margin-bottom:8px"><span class="sw" style="background:var(--you);height:4px"></span> <strong>Your universe</strong> (sliders above); a circle on the time axis marks its Big Bang</div>
         <strong style="font-size:.9rem">Reference curves (same H₀)</strong>
+        <small id="refoff" hidden>Off on a log time axis, because it is measured from your universe's Big Bang.</small>
         <label><input type="checkbox" id="tEmpty" checked> <span class="sw" style="background:var(--empty)"></span> Empty (straight line)</label>
         <label><input type="checkbox" id="tMatter" checked> <span class="sw" style="background:var(--matter)"></span> Matter only, Ωm = 1</label>
         <label><input type="checkbox" id="tOurs" checked> <span class="sw" style="background:var(--ours)"></span> Our universe, 0.3 / 0.7</label>
@@ -345,6 +348,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     ['tEmpty','tMatter','tOurs'].forEach(id=>{
       const b=$(id); b.disabled=logX; b.parentElement.style.opacity = logX ? .45 : 1;
     });
+    $('refoff').hidden=!logX;
     if(logX) ms=ms.slice(0,1); else ms.slice(1).forEach(solve);
 
     /* x in log mode is the age t - tBang, across the decades the run covers */
