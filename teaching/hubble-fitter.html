@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hubble Fitter</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#f5f6fa; --ink:#1b2033; --muted:#5d6478; --grid:#e3e6ef; --axis:#8a92a8;
+  --pt:#2563eb; --off:#b8bfcc; --fit1:#d23c5f; --fit2:#d99a00; --accent:#2563eb; --warn:#b4231b;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1020; --panel:#141b33; --ink:#e8ecf5; --muted:#9aa3ba; --grid:#222b49; --axis:#6c7593;
+    --pt:#5eb0ff; --off:#4a5370; --fit1:#ef476f; --fit2:#ffd166; --accent:#5eb0ff; --warn:#f87171;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1020; --panel:#141b33; --ink:#e8ecf5; --muted:#9aa3ba; --grid:#222b49; --axis:#6c7593;
+  --pt:#5eb0ff; --off:#4a5370; --fit1:#ef476f; --fit2:#ffd166; --accent:#5eb0ff; --warn:#f87171;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 40px}
+h1{font:600 1.7rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
+h2{font:600 1.15rem/1.3 Georgia,"Times New Roman",serif;margin:18px 0 6px}
+.lead{color:var(--muted);margin:0 0 16px;max-width:75ch}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:18px}
+@media (max-width:860px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border-radius:12px;padding:16px}
+label{font-weight:600}
+select,input[type=number],textarea{font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--axis);border-radius:6px;padding:3px 6px}
+select{width:100%}
+textarea{width:100%;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:.85rem}
+.row{margin:10px 0}
+.toggles label{display:flex;gap:8px;align-items:center;font-weight:400;margin:4px 0}
+.sw{display:inline-block;width:22px;height:3px;border-radius:2px}
+button{font:inherit;font-size:.85rem;border:1px solid var(--axis);background:transparent;color:var(--ink);border-radius:999px;padding:4px 10px;cursor:pointer}
+button:hover,button:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+input[type=range]{width:100%;accent-color:var(--accent)}
+small{color:var(--muted)}
+canvas{width:100%;display:block;background:var(--bg);border:1px solid var(--grid);border-radius:12px;cursor:pointer;touch-action:manipulation}
+#cv{height:400px} #rv{height:150px;margin-top:8px;cursor:default}
+.results{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px}
+.res{background:var(--panel);border-radius:10px;padding:10px 12px}
+.res .k{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.res .v{font-size:1.15rem;font-weight:700;font-variant-numeric:tabular-nums}
+.res .s{font-size:.85rem;color:var(--muted)}
+table{border-collapse:collapse;font-size:.88rem;font-variant-numeric:tabular-nums;width:100%}
+th,td{padding:3px 8px;text-align:right;border-bottom:1px solid var(--grid)}
+th:first-child,td:first-child,th:nth-child(2),td:nth-child(2){text-align:left}
+tr.off td{color:var(--muted);text-decoration:line-through}
+.tablewrap{max-height:340px;overflow:auto;border:1px solid var(--grid);border-radius:10px}
+details{margin-top:16px;background:var(--panel);border-radius:10px;padding:10px 14px}
+summary{cursor:pointer;font-weight:600}
+.themebtn{float:right}
+.foot{margin-top:18px;font-size:.8rem;color:var(--muted)}
+
+/* ---- match cosminilie.com -------------------------------------------------
+   Chrome only. The data colours (--matter, --vac, --rad, --ours, --you, ...)
+   are read by the canvas and left exactly as they were, and --bg is left at
+   #0b1020 in dark because the drawing code tests for that literal value.
+   Fonts are the site's own fallbacks, so nothing is fetched. ----------------*/
+:root{
+  --bg:#f7f5ef;        /* the site's cream */
+  --panel:#ffffff;     /* white cards on cream, as the site does */
+  --ink:#16202f;
+  --muted:#5d6b80;
+  --accent:#134b7a;    /* the site's link blue */
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --panel:#0f1a33; --accent:#f6d68a; }
+}
+:root[data-theme="dark"]{ --panel:#0f1a33; --accent:#f6d68a; }
+
+body{ font-family:system-ui,-apple-system,'Segoe UI',sans-serif; }
+h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
+
+.sitelink{ margin:0 0 14px; font-size:.86rem; }
+.sitelink a{ color:var(--muted); text-decoration:none; border-bottom:1px dotted currentColor; }
+.sitelink a:hover{ color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="sitelink"><a href="../#teaching">← cosminilie.com</a></p>
+<button class="themebtn" id="themeBtn" type="button">Light / dark</button>
+  <h1>Hubble Fitter</h1>
+  <p class="lead">Fit a straight line to real expansion data and read off the Hubble constant H₀. Click any point to leave it out of the fit (click again to put it back), and watch how much H₀ changes. That change is a first, honest estimate of the uncertainty.</p>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="row">
+        <label for="ds">Data set</label>
+        <select id="ds">
+          <option value="hubble">Hubble 1929: 24 galaxies (distance, velocity)</option>
+          <option value="sn">Riess et al. 1998: 27 nearby Type Ia supernovae</option>
+          <option value="custom">Your own data (paste below)</option>
+        </select>
+        <small id="dsnote"></small>
+      </div>
+
+      <div class="row" id="customBox" hidden>
+        <label for="ctype">Type of data</label>
+        <select id="ctype">
+          <option value="lin">Distance (Mpc), velocity (km/s)</option>
+          <option value="mag">log₁₀(cz in km/s), distance modulus μ</option>
+        </select>
+        <textarea id="cdata" rows="7" placeholder="name, x, y   (one point per line; name is optional)"></textarea>
+        <button type="button" id="cload">Use these data</button>
+      </div>
+
+      <div class="row toggles" id="linFits">
+        <strong style="font-size:.9rem">Fits</strong>
+        <label><input type="checkbox" id="fOrigin" checked> <span class="sw" style="background:var(--fit1)"></span> Through the origin: v = H₀ d</label>
+        <label><input type="checkbox" id="fFree"> <span class="sw" style="background:var(--fit2)"></span> With an intercept: v = H₀ d + b</label>
+      </div>
+      <div class="row toggles" id="magFits" hidden>
+        <strong style="font-size:.9rem">Fits</strong>
+        <label><input type="checkbox" id="fFixed" checked> <span class="sw" style="background:var(--fit1)"></span> Slope fixed at 5 (Hubble's law): μ = 5 log₁₀(cz) + b</label>
+        <label><input type="checkbox" id="fFreeM"> <span class="sw" style="background:var(--fit2)"></span> Free slope: μ = s log₁₀(cz) + b</label>
+      </div>
+
+      <div class="row" id="calBox" hidden>
+        <label for="dM">Calibration shift ΔM <output id="dMo"></output></label>
+        <input id="dM" type="range" min="-0.5" max="0.5" step="0.01" value="0">
+        <small>What if the supernovae were intrinsically brighter (positive ΔM) or fainter (negative ΔM) than the Cepheid calibration says? Every μ moves by ΔM.</small>
+      </div>
+
+      <div class="row">
+        <label for="cut">Leave out points with <span id="cutvar">distance</span> below</label>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px"><input type="number" id="cut" step="any" style="width:110px"> <span id="cutunit"></span></div>
+        <small>Empty = keep all. Clicked points stay out either way.</small>
+      </div>
+      <div class="row" style="display:flex;gap:8px;flex-wrap:wrap">
+        <button type="button" id="reset">Include all points</button>
+        <button type="button" id="csv">Download included data (CSV)</button>
+      </div>
+    </div>
+
+    <div>
+      <canvas id="cv" role="img" aria-label="Data and fitted lines"></canvas>
+      <canvas id="rv" role="img" aria-label="Residuals: data minus fit"></canvas>
+      <div class="results" id="results" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <h2>Data</h2>
+  <div class="tablewrap"><table id="tbl"></table></div>
+
+  <details>
+    <summary>How the fits work</summary>
+    <p><strong>Distance–velocity data.</strong> Hubble's law says v = H₀ d, a straight line through the origin, so H₀ is the slope. The fitter finds the slope that makes the squared vertical misses as small as possible (least squares). The "with an intercept" fit also lets the line miss the origin; if the intercept b comes out large compared with the scatter, something is off. The age scale 1/H₀ is converted with 1 Mpc = 3.086 × 10¹⁹ km and 1 year = 3.156 × 10⁷ s.</p>
+    <p><strong>Supernova data.</strong> The distance modulus is μ = m − M = 5 log₁₀(D / 1 Mpc) + 25. Nearby, D = cz / H₀, so μ = 5 log₁₀(cz) + 25 − 5 log₁₀ H₀: a straight line of slope 5 against log₁₀(cz). With the slope fixed at 5, the fit finds the intercept b, and then H₀ = 10<sup>(25 − b)/5</sup> km/s/Mpc. H₀ sits entirely in the intercept, and the intercept depends on the absolute magnitude M from the Cepheid calibration.</p>
+  </details>
+  <p class="foot">Data: E. Hubble 1929, PNAS 15, 168, Table 1 (distances in Mpc, velocities in km/s, not corrected for the Sun's motion). A. Riess et al. 1998, AJ 116, 1009, Table 10 (MLCS distance moduli of nearby supernovae; cz in the CMB frame). Built for the first-year seminar “Our Universe: 95% Unknown.” Free to use for teaching.</p>
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const root=document.documentElement;
+  try{const t=localStorage.getItem('hf-theme'); if(t) root.setAttribute('data-theme',t);}catch(e){}
+  $('themeBtn').addEventListener('click',()=>{const dark=getComputedStyle(root).getPropertyValue('--bg').trim()==='#0b1020'; const t=dark?'light':'dark'; root.setAttribute('data-theme',t); try{localStorage.setItem('hf-theme',t);}catch(e){} draw();});
+  const css=n=>getComputedStyle(root).getPropertyValue(n).trim();
+  const GYR_PER_INV=977.8; // 1/H0 in Gyr for H0 = 1 km/s/Mpc
+
+  const HUBBLE=[["SMC",0.032,170],["LMC",0.034,290],["NGC 6822",0.214,-130],["NGC 598 (M33)",0.263,-70],["NGC 221 (M32)",0.275,-185],["NGC 224 (M31)",0.275,-220],["NGC 5457",0.45,200],["NGC 4736",0.5,290],["NGC 5194",0.5,270],["NGC 4449",0.63,200],["NGC 4214",0.8,300],["NGC 3031",0.9,-30],["NGC 3627",0.9,650],["NGC 4826",0.9,150],["NGC 5236",0.9,500],["NGC 1068",1.0,920],["NGC 5055",1.1,450],["NGC 7331",1.1,500],["NGC 4258",1.4,500],["NGC 4151",1.7,960],["NGC 4382",2.0,500],["NGC 4472",2.0,850],["NGC 4486",2.0,800],["NGC 4649",2.0,1090]];
+  const SN=[["SN 1995D",3.398,33.01],["SN 1995E",3.547,33.60],["SN 1992al",3.625,33.92],["SN 1995bd",3.679,34.15],["SN 1994S",3.685,34.27],["SN 1992bo",3.734,34.72],["SN 1992bc",3.779,34.87],["SN 1995ak",3.820,35.15],["SN 1994M",3.859,35.39],["SN 1993H",3.871,35.20],["SN 1992ag",3.891,35.37],["SN 1992P",3.896,35.76],["SN 1996C",3.924,35.98],["SN 1992bg",4.024,36.26],["SN 1994T",4.030,36.19],["SN 1992bl",4.111,36.26],["SN 1992bh",4.130,36.91],["SN 1995ac",4.166,36.85],["SN 1993ag",4.177,36.80],["SN 1990af",4.178,36.53],["SN 1993O",4.189,37.03],["SN 1992bs",4.283,37.61],["SN 1992ae",4.350,37.80],["SN 1992bp",4.379,37.65],["SN 1992br",4.418,38.21],["SN 1992aq",4.481,38.41],["SN 1996ab",4.572,39.01]];
+
+  let pts=[], type='lin', off=new Set(), custom=[];
+  function load(){
+    const ds=$('ds').value; off=new Set(); $('cut').value='';
+    $('customBox').hidden=ds!=='custom';
+    if(ds==='hubble'){type='lin'; pts=HUBBLE.map(p=>({n:p[0],x:p[1],y:p[2]})); $('dsnote').textContent='Distances in Mpc (millions of parsecs), velocities in km/s.';}
+    else if(ds==='sn'){type='mag'; pts=SN.map(p=>({n:p[0],x:p[1],y:p[2]})); $('dsnote').textContent='x = log₁₀(cz), with cz in km/s; y = distance modulus μ (magnitudes).';}
+    else {type=$('ctype').value; pts=custom.slice(); $('dsnote').textContent='Paste two or three columns, then press "Use these data".';}
+    $('linFits').hidden=type!=='lin'; $('magFits').hidden=type!=='mag'; $('calBox').hidden=type!=='mag';
+    $('cutvar').textContent=type==='lin'?'distance':'log₁₀(cz)'; $('cutunit').textContent=type==='lin'?'Mpc':'';
+    draw();
+  }
+  function parseCustom(){
+    const lines=$('cdata').value.split(/\n/).map(s=>s.trim()).filter(Boolean); const out=[];
+    lines.forEach((ln,i)=>{ const parts=ln.split(/[,;\t ]+/).filter(Boolean); if(parts.length<2) return;
+      const nums=parts.map(Number); let n,x,y;
+      if(parts.length>=3 && isNaN(nums[0])){ n=parts.slice(0,parts.length-2).join(' '); x=nums[parts.length-2]; y=nums[parts.length-1]; }
+      else { n='#'+(i+1); x=nums[0]; y=nums[1]; }
+      if(isFinite(x)&&isFinite(y)) out.push({n,x,y}); });
+    custom=out; type=$('ctype').value; pts=custom.slice(); off=new Set(); load();
+  }
+  const dM=()=>type==='mag'?+$('dM').value:0;
+  function included(){ const c=$('cut').value===''?-Infinity:+$('cut').value; return pts.map((p,i)=>({...p,i,y:p.y+dM()})).filter(p=>!off.has(p.i)&&p.x>=c); }
+
+  function fits(){
+    const P=included(), n=P.length, r={n};
+    if(n<1) return r;
+    if(type==='lin'){
+      const sxy=P.reduce((s,p)=>s+p.x*p.y,0), sxx=P.reduce((s,p)=>s+p.x*p.x,0);
+      if(sxx>0) r.origin={H0:sxy/sxx};
+      if(n>=2){ const mx=P.reduce((s,p)=>s+p.x,0)/n, my=P.reduce((s,p)=>s+p.y,0)/n; let num=0,den=0; P.forEach(p=>{num+=(p.x-mx)*(p.y-my); den+=(p.x-mx)**2;}); if(den>0){const s=num/den; r.free={H0:s,b:my-s*mx};} }
+    } else {
+      const b=P.reduce((s,p)=>s+(p.y-5*p.x),0)/n; r.fixed={b,H0:Math.pow(10,(25-b)/5)};
+      if(n>=2){ const mx=P.reduce((s,p)=>s+p.x,0)/n, my=P.reduce((s,p)=>s+p.y,0)/n; let num=0,den=0; P.forEach(p=>{num+=(p.x-mx)*(p.y-my); den+=(p.x-mx)**2;}); if(den>0){const s=num/den; r.freeM={s,b:my-s*mx};} }
+    }
+    return r;
+  }
+
+  let geom=null;
+  function axes(ctx,W,H,m,x0,x1,y0,y1,xl,yl,xstep,ystep){
+    const X=x=>m.l+(x-x0)/(x1-x0)*(W-m.l-m.r), Y=y=>m.t+(1-(y-y0)/(y1-y0))*(H-m.t-m.b);
+    ctx.strokeStyle=css('--grid'); ctx.fillStyle=css('--muted'); ctx.lineWidth=1; ctx.font='12px system-ui, sans-serif';
+    for(let x=Math.ceil(x0/xstep-1e-9)*xstep;x<=x1+1e-9;x+=xstep){ctx.beginPath();ctx.moveTo(X(x),m.t);ctx.lineTo(X(x),H-m.b);ctx.stroke(); if(xl!==null){ctx.textAlign='center';ctx.fillText(+x.toFixed(3)+'',X(x),H-m.b+16);}}
+    for(let y=Math.ceil(y0/ystep-1e-9)*ystep;y<=y1+1e-9;y+=ystep){ctx.beginPath();ctx.moveTo(m.l,Y(y));ctx.lineTo(W-m.r,Y(y));ctx.stroke(); ctx.textAlign='right';ctx.fillText(+y.toFixed(3)+'',m.l-6,Y(y)+4);}
+    ctx.fillStyle=css('--ink'); ctx.font='13px system-ui, sans-serif'; ctx.textAlign='center';
+    if(xl) ctx.fillText(xl,m.l+(W-m.l-m.r)/2,H-6);
+    ctx.save(); ctx.translate(14,m.t+(H-m.t-m.b)/2); ctx.rotate(-Math.PI/2); ctx.fillText(yl,0,0); ctx.restore();
+    return {X,Y};
+  }
+  function niceStep(span,target){ const raw=span/target, p=Math.pow(10,Math.floor(Math.log10(raw))), f=raw/p; return (f<1.5?1:f<3.5?2:f<7.5?5:10)*p; }
+
+  function draw(){
+    $('dMo').textContent=(dM()>0?'+':'')+dM().toFixed(2)+' mag';
+    const F=fits();
+    const cv=$('cv'), ctx=cv.getContext('2d'), dpr=window.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;
+    cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+    if(!pts.length){ ctx.fillStyle=css('--muted'); ctx.font='14px system-ui'; ctx.textAlign='center'; ctx.fillText('No data yet',W/2,H/2); $('results').innerHTML=''; $('tbl').innerHTML=''; drawRes(null); return; }
+    const ys=pts.map(p=>p.y+dM()), xs=pts.map(p=>p.x);
+    let x0,x1,y0,y1;
+    if(type==='lin'){ x0=0; x1=Math.max(...xs)*1.08; y0=Math.min(0,Math.min(...ys))*1.15-20; y1=Math.max(...ys)*1.1+20; }
+    else { const px=(Math.max(...xs)-Math.min(...xs))*0.06||0.1, py=(Math.max(...ys)-Math.min(...ys))*0.08||0.5; x0=Math.min(...xs)-px; x1=Math.max(...xs)+px; y0=Math.min(...ys)-py; y1=Math.max(...ys)+py; }
+    const m={l:62,r:16,t:14,b:44};
+    const xl=type==='lin'?'distance d (Mpc)':'log₁₀(cz / 1 km/s)', yl=type==='lin'?'velocity v (km/s)':'distance modulus μ (mag)';
+    const {X,Y}=axes(ctx,W,H,m,x0,x1,y0,y1,xl,yl,niceStep(x1-x0,8),niceStep(y1-y0,6));
+    geom={X,Y,m,W,H,x0,x1,y0,y1};
+    ctx.save(); ctx.beginPath(); ctx.rect(m.l,m.t,W-m.l-m.r,H-m.t-m.b); ctx.clip();
+    if(type==='lin' && y0<0){ ctx.strokeStyle=css('--axis'); ctx.beginPath(); ctx.moveTo(m.l,Y(0)); ctx.lineTo(W-m.r,Y(0)); ctx.stroke(); }
+    function line(f,col,dash){ ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.setLineDash(dash||[]); ctx.beginPath(); ctx.moveTo(X(x0),Y(f(x0))); ctx.lineTo(X(x1),Y(f(x1))); ctx.stroke(); ctx.setLineDash([]); }
+    if(type==='lin'){ if($('fOrigin').checked&&F.origin) line(x=>F.origin.H0*x,css('--fit1')); if($('fFree').checked&&F.free) line(x=>F.free.H0*x+F.free.b,css('--fit2'),[7,5]); }
+    else { if($('fFixed').checked&&F.fixed) line(x=>5*x+F.fixed.b,css('--fit1')); if($('fFreeM').checked&&F.freeM) line(x=>F.freeM.s*x+F.freeM.b,css('--fit2'),[7,5]); }
+    const inc=new Set(included().map(p=>p.i));
+    pts.forEach((p,i)=>{ const on=inc.has(i); ctx.beginPath(); ctx.arc(X(p.x),Y(p.y+dM()),5,0,2*Math.PI);
+      if(on){ctx.fillStyle=css('--pt'); ctx.fill();} else {ctx.strokeStyle=css('--off'); ctx.lineWidth=1.5; ctx.stroke();} });
+    ctx.restore();
+    results(F); table(inc); drawRes(F,inc);
+  }
+
+  function model(F){ if(type==='lin'){ if($('fOrigin').checked&&F.origin) return x=>F.origin.H0*x; if(F.free) return x=>F.free.H0*x+F.free.b; }
+    else { if($('fFixed').checked&&F.fixed) return x=>5*x+F.fixed.b; if(F.freeM) return x=>F.freeM.s*x+F.freeM.b; } return null; }
+  function drawRes(F,inc){
+    const cv=$('rv'), ctx=cv.getContext('2d'), dpr=window.devicePixelRatio||1, W=cv.clientWidth, H=cv.clientHeight;
+    cv.width=W*dpr; cv.height=H*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W,H);
+    if(!F||!geom) return; const f=model(F); if(!f) return;
+    const r=pts.map(p=>p.y+dM()-f(p.x)); let lim=Math.max(...r.map(Math.abs))*1.15||1;
+    const m={l:62,r:16,t:10,b:22};
+    const {X,Y}=axes(ctx,W,H,m,geom.x0,geom.x1,-lim,lim,null,'data − fit',niceStep(geom.x1-geom.x0,8),niceStep(2*lim,4));
+    ctx.strokeStyle=css('--axis'); ctx.beginPath(); ctx.moveTo(m.l,Y(0)); ctx.lineTo(W-m.r,Y(0)); ctx.stroke();
+    pts.forEach((p,i)=>{ ctx.beginPath(); ctx.arc(X(p.x),Y(r[i]),3.5,0,2*Math.PI); if(inc.has(i)){ctx.fillStyle=css('--pt');ctx.fill();} else {ctx.strokeStyle=css('--off');ctx.stroke();} });
+  }
+
+  function results(F){
+    const out=[]; const n=F.n;
+    out.push(['Points in the fit', n+' of '+pts.length, n<pts.length?'Grey hollow points are left out.':'All points included.']);
+    if(type==='lin'){
+      if(F.origin) out.push(['Through the origin','H₀ = '+F.origin.H0.toFixed(1)+' km/s/Mpc','1/H₀ = '+(GYR_PER_INV/F.origin.H0).toFixed(2)+' billion years']);
+      if(F.free) out.push(['With an intercept','H₀ = '+F.free.H0.toFixed(1)+' km/s/Mpc','intercept b = '+F.free.b.toFixed(0)+' km/s; 1/H₀ = '+(GYR_PER_INV/F.free.H0).toFixed(2)+' billion years']);
+    } else {
+      if(F.fixed) out.push(['Slope fixed at 5','H₀ = '+F.fixed.H0.toFixed(1)+' km/s/Mpc','intercept b = '+F.fixed.b.toFixed(3)+'; 1/H₀ = '+(GYR_PER_INV/F.fixed.H0).toFixed(1)+' billion years'+(dM()!==0?' (with ΔM = '+dM().toFixed(2)+')':'')]);
+      if(F.freeM) out.push(['Free slope','slope s = '+F.freeM.s.toFixed(3),'intercept b = '+F.freeM.b.toFixed(3)+'']);
+    }
+    $('results').innerHTML=out.map(o=>'<div class="res"><div class="k">'+o[0]+'</div><div class="v">'+o[1]+'</div><div class="s">'+o[2]+'</div></div>').join('');
+  }
+  function table(inc){
+    const hd=type==='lin'?'<tr><th>In fit</th><th>Object</th><th>d (Mpc)</th><th>v (km/s)</th></tr>':'<tr><th>In fit</th><th>Supernova</th><th>log₁₀(cz)</th><th>cz (km/s)</th><th>z</th><th>μ (mag)</th></tr>';
+    $('tbl').innerHTML=hd+pts.map((p,i)=>{ const on=inc.has(i);
+      const cells=type==='lin'?'<td>'+p.x+'</td><td>'+p.y+'</td>':'<td>'+p.x.toFixed(3)+'</td><td>'+Math.round(Math.pow(10,p.x))+'</td><td>'+(Math.pow(10,p.x)/299792.458).toFixed(4)+'</td><td>'+(p.y+dM()).toFixed(2)+'</td>';
+      return '<tr class="'+(on?'':'off')+'"><td><input type="checkbox" data-i="'+i+'" '+(off.has(i)?'':'checked')+' aria-label="include '+p.n+'"></td><td>'+p.n+'</td>'+cells+'</tr>'; }).join('');
+  }
+
+  $('tbl').addEventListener('change',e=>{ const i=e.target.dataset.i; if(i==null) return; e.target.checked?off.delete(+i):off.add(+i); draw(); });
+  $('cv').addEventListener('click',e=>{ if(!geom||!pts.length) return; const rc=$('cv').getBoundingClientRect(), px=e.clientX-rc.left, py=e.clientY-rc.top;
+    let best=-1,bd=14; pts.forEach((p,i)=>{ const d=Math.hypot(geom.X(p.x)-px,geom.Y(p.y+dM())-py); if(d<bd){bd=d;best=i;} });
+    if(best>=0){ off.has(best)?off.delete(best):off.add(best); draw(); } });
+  $('reset').addEventListener('click',()=>{off=new Set(); $('cut').value=''; draw();});
+  $('csv').addEventListener('click',()=>{ const P=included(); const head=type==='lin'?'name,distance_Mpc,velocity_km_s':'name,log10_cz,distance_modulus_mu';
+    const txt=head+'\n'+P.map(p=>'"'+p.n+'",'+p.x+','+(type==='lin'?p.y:p.y.toFixed(3))).join('\n');
+    const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv'})); a.download=($('ds').value==='hubble'?'hubble1929':$('ds').value==='sn'?'riess1998_nearby_SNe':'my_data')+'.csv'; document.body.appendChild(a); a.click(); a.remove(); });
+  $('ds').addEventListener('change',load);
+  $('ctype').addEventListener('change',()=>{ if($('ds').value==='custom') load(); });
+  $('cload').addEventListener('click',parseCustom);
+  ['fOrigin','fFree','fFixed','fFreeM','dM','cut'].forEach(id=>$(id).addEventListener('input',draw));
+  window.addEventListener('resize',draw);
+  load();
+})();
+</script>
+</body>
+</html>

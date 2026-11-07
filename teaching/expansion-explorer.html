@@ -1,0 +1,500 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Expansion Explorer</title>
+<style>
+:root{
+  --bg:#ffffff; --panel:#f5f6fa; --ink:#1b2033; --muted:#5d6478; --grid:#e3e6ef; --axis:#8a92a8;
+  --ours:#d99a00; --matter:#d23c5f; --empty:#6f8aa8; --you:#2563eb; --band:#eef1fb; --accent:#2563eb;
+  --ok:#137a4b; --warn:#b4231b; --rad:#e76f51; --mat:#2a9d8f; --vac:#6d5bd0; --cur:#0f766e; --curv:#b8bfcc;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0b1020; --panel:#141b33; --ink:#e8ecf5; --muted:#9aa3ba; --grid:#222b49; --axis:#6c7593;
+    --ours:#ffd166; --matter:#ef476f; --empty:#9fb3c8; --you:#5eb0ff; --band:#1a2342; --accent:#5eb0ff;
+    --ok:#4ade80; --warn:#f87171; --rad:#f4a261; --mat:#4fd1c5; --vac:#a78bfa; --cur:#5eead4; --curv:#5b6580;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0b1020; --panel:#141b33; --ink:#e8ecf5; --muted:#9aa3ba; --grid:#222b49; --axis:#6c7593;
+  --ours:#ffd166; --matter:#ef476f; --empty:#9fb3c8; --you:#5eb0ff; --band:#1a2342; --accent:#5eb0ff;
+  --ok:#4ade80; --warn:#f87171; --rad:#f4a261; --mat:#4fd1c5; --vac:#a78bfa; --cur:#5eead4; --curv:#5b6580;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+.wrap{max-width:1100px;margin:0 auto;padding:20px 16px 40px}
+h1{font:600 1.7rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
+.lead{color:var(--muted);margin:0 0 18px;max-width:70ch}
+.grid{display:grid;grid-template-columns:320px 1fr;gap:18px}
+@media (max-width:820px){.grid{grid-template-columns:1fr}}
+.panel{background:var(--panel);border-radius:12px;padding:16px}
+.ctrl{margin-bottom:16px}
+.ctrl label{display:flex;justify-content:space-between;align-items:baseline;font-weight:600}
+.ctrl label output{font-variant-numeric:tabular-nums;font-weight:700;color:var(--accent)}
+.ctrl small{color:var(--muted);display:block;margin-top:2px}
+input[type=range]{width:100%;accent-color:var(--accent)}
+.presets{display:flex;flex-wrap:wrap;gap:6px;margin:4px 0 14px}
+button{font:inherit;font-size:.85rem;border:1px solid var(--axis);background:transparent;color:var(--ink);border-radius:999px;padding:4px 10px;cursor:pointer}
+button:hover,button:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+.toggles label{display:flex;gap:8px;align-items:center;font-size:.92rem;margin:4px 0}
+.sw{display:inline-block;width:22px;height:3px;border-radius:2px;vertical-align:middle}
+.plotbox{position:relative}
+canvas{width:100%;height:440px;display:block;background:var(--bg);border-radius:12px;border:1px solid var(--grid)}
+.range{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:.9rem;color:var(--muted)}
+.range select{font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--axis);border-radius:6px;padding:2px 6px}
+.facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:14px}
+.fact{background:var(--panel);border-radius:10px;padding:10px 12px}
+.fact .k{font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.04em}
+.fact .v{font-size:1.15rem;font-weight:700;font-variant-numeric:tabular-nums}
+.fact .s{font-size:.85rem;color:var(--muted)}
+.good{color:var(--ok)} .bad{color:var(--warn)}
+details{margin-top:18px;background:var(--panel);border-radius:10px;padding:10px 14px}
+summary{cursor:pointer;font-weight:600}
+.foot{margin-top:18px;font-size:.8rem;color:var(--muted)}
+.themebtn{float:right}
+h2{font:600 1.25rem/1.3 Georgia,"Times New Roman",serif;margin:26px 0 4px}
+.comp-ctrl{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:8px 0 12px;font-size:.92rem}
+.comp-ctrl input[type=number]{width:90px;font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--axis);border-radius:6px;padding:2px 6px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:10px}
+@media (max-width:860px){ .cards{grid-template-columns:repeat(auto-fit,minmax(200px,1fr))} }
+.card{background:var(--panel);border-radius:12px;padding:12px 14px}
+/* the composition of "Your universe" at the picked moment, laid over the plot
+   so it can be watched while the moment slider moves */
+.pieover{position:absolute;left:14px;top:12px;width:256px;z-index:2;pointer-events:none}
+/* no frame: the pie and its numbers sit straight on the plot, so no value can
+   spill past an edge. A halo in the page colour keeps them legible over a curve. */
+.pieover .card{background:none;box-shadow:none;border-radius:0;padding:0;font-size:.82rem;
+  text-shadow:0 0 3px var(--bg),0 0 6px var(--bg),0 0 9px var(--bg);
+  /* hold its shape: the card shrinks to one line when the picked moment is
+     before this universe's Big Bang, and the box should not jump */
+  min-height:218px;box-sizing:border-box}
+.pieover .card h3{font-size:.84rem;margin-bottom:1px}
+.pieover .card .body{align-items:flex-start}
+/* the pie is a flex item beside the table, so without this it is squeezed --
+   to nothing once the date line grows long */
+.pieover .card .body svg{flex:0 0 auto;width:112px;height:112px}
+.pieover .card .note{display:none}
+@media (max-width:860px){ .pieover{display:none} }
+
+.card h3{margin:0 0 2px;font-size:1rem;display:flex;align-items:center;gap:8px}
+.card .when{font-size:.85rem;color:var(--muted);margin-bottom:6px;font-variant-numeric:tabular-nums}
+.card .body{display:flex;gap:12px;align-items:center}
+.card table{font-size:.85rem;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.card td{padding:1px 4px}
+.dot{display:inline-block;width:10px;height:10px;border-radius:2px}
+.note{font-size:.82rem;color:var(--muted);margin-top:6px}
+canvas{touch-action:none;cursor:crosshair}
+
+/* ---- match cosminilie.com -------------------------------------------------
+   Chrome only. The data colours (--matter, --vac, --rad, --ours, --you, ...)
+   are read by the canvas and left exactly as they were, and --bg is left at
+   #0b1020 in dark because the drawing code tests for that literal value.
+   Fonts are the site's own fallbacks, so nothing is fetched. ----------------*/
+:root{
+  --bg:#f7f5ef;        /* the site's cream */
+  --panel:#ffffff;     /* white cards on cream, as the site does */
+  --ink:#16202f;
+  --muted:#5d6b80;
+  --accent:#134b7a;    /* the site's link blue */
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --panel:#0f1a33; --accent:#f6d68a; }
+}
+:root[data-theme="dark"]{ --panel:#0f1a33; --accent:#f6d68a; }
+
+body{ font-family:system-ui,-apple-system,'Segoe UI',sans-serif; }
+h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
+
+.sitelink{ margin:0 0 14px; font-size:.86rem; }
+.sitelink a{ color:var(--muted); text-decoration:none; border-bottom:1px dotted currentColor; }
+.sitelink a:hover{ color:var(--accent); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <p class="sitelink"><a href="../#teaching">← cosminilie.com</a></p>
+<button class="themebtn" id="themeBtn" type="button" aria-label="Toggle light or dark theme">Light / dark</button>
+  <h1>Expansion Explorer</h1>
+  <p class="lead">How does the size of the universe, a(t), change over time? Choose today's expansion rate H₀ and how much matter (Ωm) and vacuum energy (ΩΛ) the universe holds. Every curve passes through today at a = 1 with slope ȧ = H₀; what the universe contains decides how it bends. Below the plot, the <strong>moment slider</strong> (or a click on the plot) picks a moment in time; the pie chart on the plot shows what your universe is made of at that moment.</p>
+
+  <div class="grid">
+    <div class="panel">
+      <div class="ctrl">
+        <label for="h0">H₀ <output id="h0o"></output></label>
+        <input id="h0" type="range" min="40" max="100" step="0.5" value="70">
+        <small id="h0s"></small>
+      </div>
+      <div class="ctrl">
+        <label for="om">Ωm (matter) <output id="omo"></output></label>
+        <input id="om" type="range" min="0" max="3" step="0.01" value="0.3">
+      </div>
+      <div class="ctrl">
+        <label for="ol">ΩΛ (vacuum energy) <output id="olo"></output></label>
+        <input id="ol" type="range" min="-1" max="5" step="0.0005" value="0.7">
+        <small id="geo"></small>
+      </div>
+      <div class="toggles" style="margin-bottom:12px"><label><input type="checkbox" id="tRad"> Include radiation from the CMB <small id="rado" style="color:var(--muted)"></small></label></div>
+      <div><strong style="font-size:.9rem">Presets (assuming H₀ = 70)</strong></div>
+      <div class="presets">
+        <button type="button" data-p="0.3,0.7" data-past="20" data-fut="10">Our universe</button>
+        <button type="button" data-p="1,0">Matter only, flat</button>
+        <button type="button" data-p="0.3,0">Matter only, open</button>
+        <button type="button" data-p="0,0">Empty</button>
+        <button type="button" id="thrBtn" title="Keeps the Ωm set on the slider and sets ΩΛ to the smallest value with no Big Bang">No Big Bang threshold (for the Ωm on the slider)</button>
+        <button type="button" data-p="0,1">Vacuum only</button>
+      </div>
+      <div class="toggles">
+        <div style="font-size:.92rem;margin-bottom:8px"><span class="sw" style="background:var(--you);height:4px"></span> <strong>Your universe</strong> (sliders above); a circle on the time axis marks its Big Bang</div>
+        <strong style="font-size:.9rem">Reference curves (same H₀)</strong>
+        <label><input type="checkbox" id="tEmpty" checked> <span class="sw" style="background:var(--empty)"></span> Empty (straight line)</label>
+        <label><input type="checkbox" id="tMatter" checked> <span class="sw" style="background:var(--matter)"></span> Matter only, Ωm = 1</label>
+        <label><input type="checkbox" id="tOurs" checked> <span class="sw" style="background:var(--ours)"></span> Our universe, 0.3 / 0.7</label>
+      </div>
+      
+      </div>
+
+    <div>
+      <div class="plotbox"><canvas id="cv" role="img" aria-label="Plot of the size of the universe a versus time from today"></canvas>  <div class="pieover" id="pieover" aria-hidden="false"></div>
+      </div>
+      <div class="ctrl" style="margin:10px 0 4px">
+        <label for="tslider">Moment slider <output id="tsliderO"></output></label>
+        <input id="tslider" type="range" min="-20" max="10" step="0.01" value="0">
+        <small>Picks a time for the pie chart. You can also click and drag on the plot; a vertical line and a dot on each curve mark the moment.</small>
+      </div>
+      <div class="range">
+        <span>Show from</span>
+        <select id="past"><option>10</option><option selected>20</option><option>30</option><option>60</option></select>
+        <span>billion years ago to</span>
+        <select id="fut"><option>5</option><option selected>10</option><option>20</option><option>40</option><option>100</option></select>
+        <span>billion years from now</span>
+      </div>
+
+  <div class="comp-ctrl">
+    <button type="button" id="todayBtn">Today</button>
+    <span>or redshift z =</span><input type="number" id="zin" min="0" step="any" placeholder="e.g. 3400"><button type="button" id="zBtn">Show</button>
+    <span id="pickinfo" style="color:var(--muted)"></span>
+  </div>
+  <div class="cards" id="cards" aria-live="polite"></div>
+  <div class="facts" id="facts" aria-live="polite"></div>
+      </div>
+  </div>
+
+  <p class="note">Radiation (photons and neutrinos) dominated only for the first ~50,000 years, before z ≈ 3400; to see it, tick “Include radiation from the CMB” and type a large redshift. Ω values are fractions of the critical density at that moment. Flat universes have a total of exactly 1. For curved ones the total misses 1, and the gap is written Ωk = 1 − (total): positive for open universes (total below 1), negative for closed ones (total above 1). Ωk is not a substance, just bookkeeping for the curvature.</p>
+
+  <details>
+    <summary>How this works</summary>
+    <p>The size of the universe is a(t), with a = 1 today. Its rate of growth is ȧ (like a velocity), and how fast that rate changes is ä (like an acceleration). Matter slows the expansion; vacuum energy, with pressure p = −ρc², speeds it up:</p>
+    <p style="text-align:center">ä / a = −(4πG/3)(ρ + 3p/c²) &nbsp;⟹&nbsp; ä = H₀² a (ΩΛ − Ωm / (2a³) − Ω_rad / a⁴)</p>
+    <p>The program starts today with a = 1 and ȧ = H₀, then steps this equation backward and forward in time. Going back, a either reaches zero (a Big Bang) or stops shrinking and turns around (no Big Bang). The empty universe is a straight line, so its age is exactly 1/H₀. Radiation (Ω_rad = 4.15 × 10⁻⁵ / h², from the measured CMB temperature plus neutrinos) is included unless you switch it off; it adds a term −Ω_rad/a⁴ inside the bracket and matters only in the first few hundred thousand years.</p>
+    <p><strong>Composition at a moment.</strong> The moment slider picks a time. For each universe on the plot, the program reads off its size a at that time and works out each ingredient's share of the critical density: matter thins out as 1/a³, radiation as 1/a⁴, vacuum energy stays the same, and the curvature share as 1/a². Typing a redshift instead picks the moment when a = 1/(1 + z), which comes at a different time in each universe.</p>
+    <p>H₀ in km/s per Mpc converts to a growth rate per billion years: 1 km/s/Mpc = 1/977.8 per billion years, so H₀ = 70 means a grows by about 7% of today's size per billion years.</p>
+  </details>
+  <p class="foot">Built for the first-year seminar “Our Universe: 95% Unknown.” Free to use for teaching.</p>
+</div>
+
+<script>
+(function(){
+  const $=id=>document.getElementById(id);
+  const GYR=977.8; // 1/H0 in Gyr when H0 = 1 km/s/Mpc
+  const root=document.documentElement;
+  try{const t=localStorage.getItem('ee-theme'); if(t) root.setAttribute('data-theme',t);}catch(e){}
+  $('themeBtn').addEventListener('click',()=>{
+    const dark=getComputedStyle(root).getPropertyValue('--bg').trim()==='#0b1020';
+    const t=dark?'light':'dark'; root.setAttribute('data-theme',t);
+    try{localStorage.setItem('ee-theme',t);}catch(e){}
+    draw();
+  });
+
+  // Radiation today from the CMB temperature (photons + 3 neutrino species): Omega_rad h^2 = 4.15e-5
+  function OrOf(H0){ return $('tRad').checked ? 4.15e-5/Math.pow(H0/100,2) : 0; }
+  // integrate a'' = H0^2 a (OL - Om/(2a^3) - Or/a^4) from a=1, a'=H0 at t=0
+  function evolve(Om,OL,H0,tmin,tmax,Or,hmax){
+    Or=Or||0; hmax=hmax||0.02;
+    const H=H0/GYR, H2=H*H;
+    const acc=(a)=>H2*a*(OL-Om/(2*a*a*a)-Or/(a*a*a*a));
+    function run(dir,tlim){
+      let t=0,a=1,v=H; const pts=[[0,1]]; let end=null, minA=1, tMin=0, turned=false, maxA=1, tMax=0, turnFwd=false;
+      for(let i=0;i<200000;i++){
+        if(dir<0? t<=tlim : t>=tlim) break;
+        let h=Math.min(hmax, 0.004*a/Math.max(Math.abs(v),1e-9));
+        h=Math.max(h,1e-7);
+        if(dir<0 && t-h<tlim) h=t-tlim; if(dir>0 && t+h>tlim) h=tlim-t;
+        const d=dir*h;
+        const k1a=v,k1v=acc(a);
+        const k2a=v+d/2*k1v,k2v=acc(a+d/2*k1a);
+        const k3a=v+d/2*k2v,k3v=acc(a+d/2*k2a);
+        const k4a=v+d*k3v,k4v=acc(a+d*k3a);
+        const na=a+d/6*(k1a+2*k2a+2*k3a+k4a), nv=v+d/6*(k1v+2*k2v+2*k3v+k4v);
+        t+=d;
+        if(na<1e-9) break; // pure vacuum energy: a -> 0 only in the infinite past
+        if(na<=0.003 && !(Om===0 && Or===0 && OL>=0.999)){ // a -> 0: Big Bang (dir<0) or Big Crunch (dir>0)
+          const f=(Om>0)?2/3:(Or>0?1/2:1); const rem=f*Math.max(na,0.003)/Math.max(Math.abs(nv),1e-12);
+          const tz=t+dir*rem; pts.push([t,Math.max(na,0)]); pts.push([tz,0]); end=tz; break;
+        }
+        if(dir<0 && v>0 && nv<=0) turned=true;
+        if(dir>0 && v>0 && nv<=0) turnFwd=true;
+        a=na; v=nv; pts.push([t,a]);
+        if(a<minA){minA=a;tMin=t;}
+        if(a>maxA){maxA=a;tMax=t;}
+        if(a>1e4) break;
+      }
+      return {pts,end,minA,tMin,turned,maxA,tMax,turnFwd};
+    }
+    const back=run(-1,tmin), fwd=run(1,tmax);
+    return {pts:back.pts.reverse().concat(fwd.pts.slice(1)), bang:back.end, crunch:fwd.end, back, fwd};
+  }
+  function thresholdAnalytic(Om){ if(Om<=0) return 1; const x=(1-Om)/Om; return x>=1? 4*Om*Math.pow(Math.cosh(Math.acosh(x)/3),3) : 4*Om*Math.pow(Math.cos(Math.acos(x)/3),3); }
+  const thrCache={};
+  function thresholdOL(Om,Or){ // smallest OL with a bounce (no Big Bang); numerical when radiation is included
+    Or=Or||0; const T0=thresholdAnalytic(Om); if(Or===0) return T0;
+    const key=Om.toFixed(4)+'|'+Or.toExponential(4); if(thrCache[key]!=null) return thrCache[key];
+    const bounces=OL=>evolve(Om,OL,70,-400,0,Or).back.turned;
+    let lo=T0-0.01, hi=T0+0.2; while(!bounces(hi)) hi+=0.2;
+    for(let k=0;k<22;k++){ const mid=(lo+hi)/2; if(bounces(mid)) hi=mid; else lo=mid; }
+    return thrCache[key]=hi;
+  }
+
+  const cv=$('cv'), ctx=cv.getContext('2d');
+  function css(n){return getComputedStyle(root).getPropertyValue(n).trim();}
+  function state(){return {H0:+$('h0').value,Om:+$('om').value,OL:+$('ol').value,past:+$('past').value,fut:+$('fut').value};}
+  let pick={mode:'time',t:0,z:null}; let geom=null;
+
+  function models(s){
+    const Or=OrOf(s.H0), list=[{name:'Your universe',Om:s.Om,OL:s.OL,Or,color:css('--you'),w:3.5,dash:[]}];
+    if($('tEmpty').checked) list.push({name:'Empty',Om:0,OL:0,Or:0,color:css('--empty'),w:2,dash:[6,5]});
+    if($('tMatter').checked) list.push({name:'Matter only, Ωm = 1',Om:1,OL:0,Or,color:css('--matter'),w:2,dash:[2,4]});
+    if($('tOurs').checked) list.push({name:'Our universe, 0.3 / 0.7',Om:0.3,OL:0.7,Or,color:css('--ours'),w:2,dash:[8,4]});
+    return list;
+  }
+  function interpA(pts,t){ // pts ascending in t
+    if(t<pts[0][0]||t>pts[pts.length-1][0]) return null;
+    let lo=0,hi=pts.length-1; while(hi-lo>1){const mid=(lo+hi)>>1; if(pts[mid][0]<=t) lo=mid; else hi=mid;}
+    const [t0,a0]=pts[lo],[t1,a1]=pts[hi]; return t1===t0?a0:a0+(a1-a0)*(t-t0)/(t1-t0);
+  }
+  function timeOfA(pts,a){ // latest past time (t<=0) with this a, searching back from today
+    let k=pts.findIndex(p=>p[0]>=0); if(k<0) k=pts.length-1;
+    for(let i=k;i>0;i--){ const p=pts[i-1],q=pts[i]; if((p[1]-a)*(q[1]-a)<=0 && p[1]!==q[1]) return p[0]+(q[0]-p[0])*(a-p[1])/(q[1]-p[1]); }
+    return null;
+  }
+
+  function draw(){
+    const s=state();
+    const Or=OrOf(s.H0);
+    $('h0o').textContent=s.H0.toFixed(1)+' km/s/Mpc';
+    $('h0s').textContent='= '+(s.H0/GYR).toFixed(4)+' per billion years (1/H₀ = '+(GYR/s.H0).toFixed(1)+' billion years)';
+    $('omo').textContent=s.Om.toFixed(2); $('olo').textContent=(Math.abs(s.OL*100-Math.round(s.OL*100))>1e-6)?s.OL.toFixed(4):s.OL.toFixed(2);
+    $('rado').textContent='(Ω_rad = '+(4.15e-5/Math.pow(s.H0/100,2)).toExponential(1)+')';
+    const Ok=1-s.Om-s.OL-Or;
+    $('geo').textContent='Ωm + ΩΛ = '+(s.Om+s.OL).toFixed(2)+(Math.abs(Ok)<0.005?' (flat)':(Ok>0?' (open)':' (closed)'));
+
+    const dpr=window.devicePixelRatio||1, W=cv.clientWidth, Hh=cv.clientHeight;
+    cv.width=W*dpr; cv.height=Hh*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
+    ctx.clearRect(0,0,W,Hh);
+    const m={l:56,r:16,t:16,b:44}, pw=W-m.l-m.r, ph=Hh-m.t-m.b;
+    const x0=-s.past, x1=s.fut, y0=0, y1=2.5;
+    const X=t=>m.l+(t-x0)/(x1-x0)*pw, Y=a=>m.t+(1-(a-y0)/(y1-y0))*ph;
+    geom={m,pw,ph,x0,x1};
+    const ts=$('tslider'); ts.min=x0; ts.max=x1;
+    if(pick.mode==='time'){ if(pick.t<x0||pick.t>x1) pick.t=Math.max(x0,Math.min(x1,pick.t)); ts.value=pick.t; $('tsliderO').textContent=pick.t===0?'today':(Math.abs(pick.t).toFixed(2)+' billion years '+(pick.t<0?'ago':'from now')); }
+    else { $('tsliderO').textContent='(set by redshift z = '+pick.z+')'; }
+    ctx.font='12px system-ui, sans-serif'; ctx.fillStyle=css('--muted'); ctx.strokeStyle=css('--grid'); ctx.lineWidth=1;
+    const xstep=(x1-x0)>50?10:5;
+    for(let t=Math.ceil(x0/xstep)*xstep;t<=x1;t+=xstep){ctx.beginPath();ctx.moveTo(X(t),m.t);ctx.lineTo(X(t),m.t+ph);ctx.stroke();ctx.textAlign='center';ctx.fillText(String(t),X(t),m.t+ph+16);}
+    for(let a=0;a<=y1+1e-9;a+=0.5){ctx.beginPath();ctx.moveTo(m.l,Y(a));ctx.lineTo(m.l+pw,Y(a));ctx.stroke();ctx.textAlign='right';ctx.fillText(a.toFixed(1),m.l-8,Y(a)+4);}
+    ctx.fillStyle=css('--ink'); ctx.textAlign='center'; ctx.font='13px system-ui, sans-serif';
+    ctx.fillText('time from today (billion years)',m.l+pw/2,Hh-8);
+    ctx.save(); ctx.translate(14,m.t+ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('size of the universe, a (today = 1)',0,0); ctx.restore();
+    ctx.strokeStyle=css('--axis'); ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(X(0),m.t); ctx.lineTo(X(0),m.t+ph); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle=css('--muted'); ctx.textAlign='left'; ctx.fillText('today',X(0)+4,m.t+12);
+
+    const ms=models(s);
+    ms.forEach(md=>{ md.r=evolve(md.Om,md.OL,s.H0,Math.min(x0-1,-400),Math.max(x1+1,0),md.Or); });
+    ctx.save(); ctx.beginPath(); ctx.rect(m.l,m.t,pw,ph); ctx.clip();
+    ms.slice().reverse().forEach(md=>{
+      ctx.strokeStyle=md.color; ctx.lineWidth=md.w; ctx.setLineDash(md.dash); ctx.beginPath(); let started=false;
+      md.r.pts.forEach(p=>{ if(p[0]<x0-1||p[0]>x1+1) return; const px=X(p[0]),py=Y(Math.min(p[1],y1+0.5)); started?ctx.lineTo(px,py):ctx.moveTo(px,py); started=true;});
+      ctx.stroke(); ctx.setLineDash([]);
+    });
+    // picked moment
+    ms.forEach(md=>{
+      if(pick.mode==='time'){ md.tp=pick.t; md.ap=interpA(md.r.pts,pick.t); }
+      else { md.ap=1/(1+pick.z); md.tp=timeOfA(md.r.pts,md.ap); if(md.tp==null) md.ap=null; }
+    });
+    if(pick.mode==='time'){
+      ctx.strokeStyle=css('--cur'); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(X(pick.t),m.t); ctx.lineTo(X(pick.t),m.t+ph); ctx.stroke();
+    }
+    ms.forEach(md=>{ if(md.ap==null||md.tp==null) return; ctx.fillStyle=md.color; ctx.strokeStyle=css('--bg'); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(X(md.tp),Y(md.ap),5.5,0,2*Math.PI); ctx.fill(); ctx.stroke(); });
+    ctx.restore();
+    const r=ms[0].r;
+    function mark(t,color,label,side){ if(t==null||t<x0||t>x1) return; const px=X(t), py=Y(0);
+      ctx.fillStyle=css('--bg'); ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(px,py,4.5,0,2*Math.PI); ctx.fill(); ctx.stroke();
+      ctx.fillStyle=color; ctx.font='600 12px system-ui, sans-serif';
+      // flip the label inwards when it would run off the end of the plot
+      let sd=side, w=ctx.measureText(label).width;
+      if(sd==='left' && px+8+w>m.l+pw) sd='right';
+      else if(sd==='right' && px-8-w<m.l) sd='left';
+      ctx.textAlign=sd; ctx.fillText(label,px+(sd==='right'?-8:8),py-8); }
+    mark(r.bang,css('--you'),'Big Bang','right'); mark(r.crunch,css('--warn'),'Big Crunch','left');
+    ctx.fillStyle=css('--you'); ctx.beginPath(); ctx.arc(X(0),Y(1),5,0,2*Math.PI); ctx.fill();
+
+    facts(s,Or);
+    cards(ms);
+  // show "Your universe" over the plot; the others stay in the row below.
+  // Wide screens only -- on a phone the plot is too narrow to cover.
+  (function(){
+    const over=$('pieover'); if(!over) return;
+    over.innerHTML='';
+    const wide=window.matchMedia('(min-width:861px)').matches;
+    $('cards').style.display = wide ? 'none' : '';
+    if(!wide) return;
+    const mine=[].slice.call($('cards').children).filter(function(c){
+      return /Your universe/.test(c.textContent); })[0];
+    if(!mine){ $('cards').style.display=''; return; }
+    over.appendChild(mine);
+    // Park the box in whichever corner of the plot the curves leave emptiest,
+    // so it never hides the part of a(t) you are looking at.
+    const BW=256, BH=218, in_=8;
+    const corners=[
+      {x:m.l+in_,          y:m.t+in_},          // top left
+      {x:m.l+in_,          y:m.t+ph-BH-in_},    // bottom left
+      {x:m.l+pw-BW-in_,    y:m.t+ph-BH-in_},    // bottom right
+      {x:m.l+pw-BW-in_,    y:m.t+in_}           // top right
+    ];
+    // Walk each curve in screen space and measure how much of it a box here
+    // would cover; raw sample counts would just flag wherever a(t) is flattest.
+    const seen=[];
+    ms.forEach(function(md,mi){
+      if(!md.r||!md.r.pts) return;
+      // your own curve is the one being read; the dashed references matter less
+      const wt=(mi===0)?6:1;
+      let prev=null;
+      md.r.pts.forEach(function(p){
+        if(p[0]<x0||p[0]>x1){ prev=null; return; }
+        const px=X(p[0]), py=Y(Math.min(p[1],y1+0.5));
+        if(prev){
+          const d=Math.hypot(px-prev[0],py-prev[1]), n=Math.max(1,Math.ceil(d/4));
+          for(let i=1;i<=n;i++) seen.push([prev[0]+(px-prev[0])*i/n, prev[1]+(py-prev[1])*i/n, wt]);
+        } else seen.push([px,py,wt]);
+        prev=[px,py];
+      });
+    });
+    const score=corners.map(function(c){
+      let n=0;
+      for(let i=0;i<seen.length;i++){
+        const q=seen[i];
+        if(q[0]>=c.x&&q[0]<=c.x+BW&&q[1]>=c.y&&q[1]<=c.y+BH) n+=q[2];
+      }
+      return n;
+    });
+    let best=0; for(let i=1;i<corners.length;i++) if(score[i]<score[best]) best=i;
+    over.style.left=Math.round(corners[best].x)+'px';
+    over.style.top =Math.round(corners[best].y)+'px';
+  })();
+  }
+
+  function sci(x){ return x.toExponential(1).replace(/e\+?/,'×10^').replace(/\^(-?\d+)/,(m0,e)=>'<sup>'+e+'</sup>'); }
+  // Ω is measured against the critical density, which goes as H², so every Ω
+  // runs away as the expansion halts at a turnaround. Say that in exponents.
+  function fmt(x){ const ax=Math.abs(x); if(ax===0) return '0'; if(ax<0.001||ax>=1000) return sci(x); if(ax<0.1) return x.toFixed(3); return x.toFixed(2); }
+  function pie(parts){ // parts: [[value,color],...] all >=0
+    const tot=parts.reduce((u,p)=>u+p[0],0); const R=46,c=50;
+    if(tot<=0) return '<svg width="100" height="100" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="'+css('--axis')+'" stroke-dasharray="4 4"/><text x="50" y="54" text-anchor="middle" font-size="11" fill="'+css('--muted')+'">nothing</text></svg>';
+    let ang=-Math.PI/2, out='';
+    const nz=parts.filter(p=>p[0]/tot>1e-9);
+    if(nz.length===1) return '<svg width="100" height="100" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="'+nz[0][1]+'"/></svg>';
+    parts.forEach(([v,col])=>{ const fr=v/tot; if(fr<=0) return; const a2=ang+fr*2*Math.PI;
+      const xA=c+R*Math.cos(ang),yA=c+R*Math.sin(ang),xB=c+R*Math.cos(a2),yB=c+R*Math.sin(a2);
+      out+='<path d="M'+c+','+c+' L'+xA.toFixed(2)+','+yA.toFixed(2)+' A'+R+','+R+' 0 '+(fr>0.5?1:0)+' 1 '+xB.toFixed(2)+','+yB.toFixed(2)+' Z" fill="'+col+'"/>'; ang=a2; });
+    return '<svg width="100" height="100" viewBox="0 0 100 100" aria-hidden="true">'+out+'</svg>';
+  }
+  function cards(ms){
+    const cr=css('--rad'),cm=css('--mat'),cvv=css('--vac'),ck=css('--curv');
+    $('pickinfo').textContent = pick.mode==='time' ? ('Picked: '+(pick.t===0?'today':(Math.abs(pick.t).toFixed(2)+' billion years '+(pick.t<0?'ago':'from now')))) : ('Picked: redshift z = '+pick.z);
+    $('cards').innerHTML=ms.map(md=>{
+      let head='<h3><span class="dot" style="background:'+md.color+'"></span>'+md.name+'</h3>';
+      if(md.ap==null){
+        let why;
+        if(pick.mode==='z') why=md.r.bang==null&&md.r.back.turned?'This universe never was this small (no Big Bang; smallest a = '+md.r.back.minA.toFixed(2)+').':'This moment is not reached.';
+        else if(md.r.bang!=null&&pick.t<md.r.bang) why='Before this universe\'s Big Bang.';
+        else if(md.r.crunch!=null&&pick.t>md.r.crunch) why='After this universe\'s Big Crunch.';
+        else why='Outside the computed range.';
+        return '<div class="card">'+head+'<div class="note">'+why+'</div></div>';
+      }
+      const a=Math.max(md.ap,1e-6), Ok0=1-md.Om-md.OL-md.Or;
+      const E2=md.Or/a**4+md.Om/a**3+Ok0/a**2+md.OL;
+      const or=md.Or/a**4/E2, om=md.Om/a**3/E2, ol=md.OL/E2, ok=Ok0/a**2/E2;
+      const z=1/a-1;
+      let since=''; if(md.r.bang!=null){ const g=md.tp-md.r.bang; since=' ('+(g<0.001?(g*1e6).toFixed(0)+' thousand':(g<1?(g*1e3).toFixed(0)+' million':g.toFixed(2)+' billion'))+' years after its Big Bang)'; }
+      const when=(md.tp===0?'today':(Math.abs(md.tp).toFixed(2)+' billion years '+(md.tp<0?'ago':'from now')))+since+' · a = '+(a<0.01?a.toExponential(2):a.toFixed(3))+(z>1e-6?' · z = '+(z<10?z.toFixed(2):z.toFixed(0)):'');
+      const parts=[[or,cr],[om,cm],[Math.max(ol,0),cvv],[Math.max(ok,0),ck]];
+      const rows='<tr><td><span class="dot" style="background:'+cr+'"></span></td><td>Radiation</td><td>'+fmt(or)+'</td></tr>'
+        +'<tr><td><span class="dot" style="background:'+cm+'"></span></td><td>Matter</td><td>'+fmt(om)+'</td></tr>'
+        +'<tr><td><span class="dot" style="background:'+cvv+'"></span></td><td>Vacuum</td><td>'+fmt(ol)+'</td></tr>'
+        +'<tr><td><span class="dot" style="background:'+ck+'"></span></td><td>Curvature</td><td>'+fmt(ok)+'</td></tr>';
+      const neg=ol<0?'<div class="note">Negative vacuum energy is not shown in the pie.</div>':'';
+      const empty=(md.Om===0&&md.OL===0&&md.Or===0)?'<div class="note">Empty: no matter, radiation or vacuum energy; all curvature.</div>':'';
+      const closedNote=ok<-1e-6?'<div class="note">Closed: the ingredients add up to more than 1, so Ωk is negative and can\'t be a slice. The pie shows the ingredients only; they overshoot 1 by '+fmt(-ok)+'.</div>':'';
+      const tot0=md.Om+md.OL+md.Or, geoName=Math.abs(Ok0)<0.005?'Flat':(Ok0>0?'Open':'Closed');
+      const geo='<div class="note"><strong>'+geoName+'</strong> (total Ω today = '+tot0.toFixed(2)+(Math.abs(Ok0)<0.005?' = 1':(Ok0>0?' < 1':' > 1'))+'). The geometry never changes; only the shares do.</div>';
+      return '<div class="card">'+head+'<div class="when">'+when+'</div><div class="body">'+pie(parts)+'<table>'+rows+'</table></div>'+geo+closedNote+neg+empty+'</div>';
+    }).join('');
+  }
+
+  function facts(s,Or){
+    const Om=s.Om, OL=s.OL, H0=s.H0, TH=GYR/H0;
+    const back=evolve(Om,OL,H0,-400,0,Or), age=back.bang, fw=evolve(Om,OL,H0,0,1e5,Or,25), crunch=fw.crunch;
+    const out=[];
+    if(age!=null){
+      out.push(['Age of the universe',(-age).toFixed(2)+' billion years',(-age/TH).toFixed(3)+' × 1/H₀ (empty universe: exactly 1)']);
+    } else {
+      const b=back.back, amin=b.minA, zmax=1/amin-1;
+      out.push(['Big Bang?','<span class="bad">No: a never reaches 0</span>', b.turned?('Smallest size a = '+amin.toFixed(2)+', '+(-b.tMin).toFixed(1)+' billion years ago; nothing visible beyond z = '+zmax.toFixed(2)):'a shrinks only slowly toward zero in the infinite past']);
+    }
+    const accNow=OL-Om/2-Or;
+    out.push(['Today the expansion is', accNow>1e-9?'<span class="good">speeding up</span> (ä > 0)':(accNow<-1e-9?'<span class="bad">slowing down</span> (ä < 0)':'coasting (ä = 0)'),
+      'ä today ∝ ΩΛ − Ωm/2 − Ω_rad = '+accNow.toFixed(2)]);
+    if(Om>0 && OL>0){
+      const as=Math.cbrt(Om/(2*OL));
+      if(as<1){
+        const ts=timeOfA(back.pts,as);
+        if(ts!=null) out.push(['Switched from slowing to speeding up', (-ts).toFixed(1)+' billion years ago', 'when a = '+as.toFixed(2)+' (redshift z = '+(1/as-1).toFixed(2)+')']);
+      }
+    }
+    const rec=crunch!=null||fw.fwd.turnFwd;
+    out.push(['Future', rec?('<span class="bad">Recollapses</span>'+(crunch!=null?' in '+(crunch<1000?crunch.toFixed(1):crunch.toFixed(0))+' billion years':'')):'Expands forever', rec?('Grows to a = '+fw.fwd.maxA.toFixed(2)+' about '+(fw.fwd.tMax<1000?fw.fwd.tMax.toFixed(0):fw.fwd.tMax.toExponential(1))+' billion years from now, then shrinks to a “Big Crunch”'):'ȧ never reaches zero']);
+    const thr=thresholdOL(Om,Or);
+    out.push(['No-Big-Bang threshold','ΩΛ = '+thr.toFixed(4)+' for Ωm = '+Om.toFixed(2), (OL>=thr?'You are at or above it: no Big Bang.':'Above this value of ΩΛ there would be no Big Bang.')+(Or>0?' (Radiation raises it slightly.)':'')]);
+    const Ok=1-Om-OL-Or;
+    const tot=1-Ok;
+    out.push(['Geometry', Math.abs(Ok)<0.005?'Flat':(Ok>0?'Open':'Closed'),
+      'Total Ω = '+tot.toFixed(2)+(Math.abs(Ok)<0.005?' = 1':(Ok>0?' < 1':' > 1'))+'. Ωk = 1 − total = '+Ok.toFixed(2)+': the curvature share, how far the total is from 1. Ωk = 0 flat, Ωk > 0 open, Ωk < 0 closed.']);
+    $('facts').innerHTML=out.map(f=>'<div class="fact"><div class="k">'+f[0]+'</div><div class="v">'+f[1]+'</div><div class="s">'+f[2]+'</div></div>').join('');
+  }
+
+  function pickFromEvent(e){
+    if(!geom) return; const rect=cv.getBoundingClientRect(); const px=e.clientX-rect.left;
+    const {m,pw,x0,x1}=geom; let t=x0+(px-m.l)/pw*(x1-x0); t=Math.max(x0,Math.min(x1,t));
+    if(Math.abs(t)<(x1-x0)*0.006) t=0;
+    pick={mode:'time',t,z:null}; draw();
+  }
+  let dragging=false;
+  cv.addEventListener('pointerdown',e=>{dragging=true; try{cv.setPointerCapture(e.pointerId);}catch(_){} pickFromEvent(e);});
+  cv.addEventListener('pointermove',e=>{ if(dragging) pickFromEvent(e); });
+  cv.addEventListener('pointerup',()=>{dragging=false;});
+  $('tslider').addEventListener('input',e=>{ let t=+e.target.value; if(Math.abs(t)<0.05) t=0; pick={mode:'time',t,z:null}; draw(); });
+  $('todayBtn').addEventListener('click',()=>{pick={mode:'time',t:0,z:null}; draw();});
+  function goZ(){ const z=parseFloat($('zin').value); if(!(z>=0)) return; pick={mode:'z',t:null,z}; draw(); }
+  $('zBtn').addEventListener('click',goZ);
+  $('zin').addEventListener('keydown',e=>{ if(e.key==='Enter') goZ(); });
+  $('thrBtn').addEventListener('click',()=>{const Om=+$('om').value; const T=Math.ceil(thresholdOL(Om,OrOf(+$('h0').value))/0.0005)*0.0005; $('ol').value=T.toFixed(4); $('past').value='60'; draw();});
+  document.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{const [mm,l]=b.dataset.p.split(',');$('h0').value=70;$('om').value=mm;$('ol').value=l;if(b.dataset.past)$('past').value=b.dataset.past;if(b.dataset.fut)$('fut').value=b.dataset.fut;draw();}));
+
+  ['h0','om','ol','past','fut','tEmpty','tMatter','tOurs','tRad'].forEach(id=>$(id).addEventListener('input',draw));
+  window.addEventListener('resize',draw);
+  draw();
+})();
+</script>
+</body>
+</html>

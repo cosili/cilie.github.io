@@ -297,6 +297,10 @@ section.cream{background:var(--cream);border-block:1px solid var(--line)}
 .card p:last-child{margin-bottom:0}
 .card .tag{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--gold);display:block;margin-bottom:8px}
 .card.link{cursor:pointer}
+/* a card that is a real link to another page, not a JS tab jump */
+a.card{display:block;color:inherit;text-decoration:none}
+a.card h3{color:var(--text)}
+
 .card .arrow{color:var(--maroon);font-weight:600;font-size:.92rem}
 
 /* research area cards */
@@ -563,7 +567,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
       <span class="tabwrap"><button data-tab="research">Research<span class="caret" aria-hidden="true">▾</span></button><span class="dropdown"><button class="ditem" type="button" data-tab="research" data-target="r-themes">Research themes</button><button class="ditem" type="button" data-tab="research" data-target="r-recent">Recent highlights</button><button class="ditem" type="button" data-tab="research" data-target="r-awards">Awards</button><button class="ditem" type="button" data-tab="research" data-target="r-funding">Funding</button><button class="ditem" type="button" data-tab="research" data-target="r-talks">Talks</button></span></span>
       <button data-tab="publications">Publications</button><span class="tabwrap"><button data-tab="mentoring">Mentoring<span class="caret" aria-hidden="true">▾</span></button><span class="dropdown"><button class="ditem" type="button" data-tab="mentoring" data-target="m-overview">Overview</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-gallery">Gallery</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-current">Current group</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-past">Past honors mentees</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-voices">In their own words</button><button class="ditem" type="button" data-tab="mentoring" data-target="m-join">Join the group</button></span></span>
       
-      <button data-tab="teaching">Teaching</button>
+      <span class="tabwrap"><button data-tab="teaching">Teaching<span class="caret" aria-hidden="true">▾</span></button><span class="dropdown"><button class="ditem" type="button" data-tab="teaching" data-target="t-courses">Courses</button><button class="ditem" type="button" data-tab="teaching" data-target="t-resources">Teaching resources</button></span></span>
       <span class="tabwrap"><button data-tab="press">Press<span class="caret" aria-hidden="true">▾</span></button><span class="dropdown"><button class="ditem" type="button" data-tab="press" data-target="p-featured">Featured</button><button class="ditem" type="button" data-tab="press" data-target="p-2026">2026</button><button class="ditem" type="button" data-tab="press" data-target="p-2025">2025</button><button class="ditem" type="button" data-tab="press" data-target="p-2024">2024</button><button class="ditem" type="button" data-tab="press" data-target="p-2324">2023</button><button class="ditem" type="button" data-tab="press" data-target="p-earlier">Earlier</button></span></span>
       <button data-tab="cv">CV</button>
     </nav>
@@ -1529,7 +1533,7 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
     </div>
   </div>
 
-  <section class="block">
+  <section class="block" id="t-courses" data-sec>
     <div class="wrap">
       <div class="section-head">
         <h2 style="font-size:1.6rem">Courses taught at Colgate</h2>
@@ -1552,6 +1556,30 @@ footer.site li{margin-bottom:7px;font-size:.93rem}
           <tr><td class="lvl"></td><td>PHYS 492 / ASTR 492, <em>Independent Study — Research</em></td><td class="terms">Spring 2019–2021, 2023–2026</td></tr>
         </tbody>
       </table>
+    </div>
+  </section>
+
+  <section class="block cream" id="t-resources" data-sec>
+    <div class="wrap">
+      <div class="section-head">
+        <div class="kicker">Teaching resources</div>
+        <h2 style="font-size:1.6rem">Interactive tools</h2>
+        <p>Built for the first-year seminar <em>Our Universe: 95% Unknown</em>. Each runs entirely in the browser — nothing to install, and they work offline.</p>
+      </div>
+      <div class="grid g2">
+        <a class="card link" href="teaching/expansion-explorer.html">
+          <span class="tag">Cosmology</span>
+          <h3 style="font-size:1.15rem;margin-bottom:.35em">Expansion Explorer</h3>
+          <p>See how the size of the universe changes over time for any mix of matter and vacuum energy, and what it is made of at any moment.</p>
+          <p class="arrow">Open the tool →</p>
+        </a>
+        <a class="card link" href="teaching/hubble-fitter.html">
+          <span class="tag">Data analysis</span>
+          <h3 style="font-size:1.15rem;margin-bottom:.35em">Hubble Fitter</h3>
+          <p>Measure the Hubble constant yourself, from Hubble's 1929 galaxies and from the 1998 supernovae that revealed the accelerating universe.</p>
+          <p class="arrow">Open the tool →</p>
+        </a>
+      </div>
     </div>
   </section>
 </div>
