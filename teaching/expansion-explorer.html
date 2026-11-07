@@ -38,6 +38,9 @@ h1{font:600 1.7rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
   border:1px solid var(--axis);border-radius:6px;padding:1px 4px;width:9ch;text-align:right;
   font-variant-numeric:tabular-nums}
 .ctrl label .numin:focus{outline:2px solid var(--accent);outline-offset:1px}
+/* keep the box and its unit together on the right of the label */
+.ctrl label .numwrap{display:inline-flex;align-items:baseline;gap:5px}
+.ctrl label .unit{font-weight:700;color:var(--accent)}
 .ctrl small{color:var(--muted);display:block;margin-top:2px}
 input[type=range]{width:100%;accent-color:var(--accent)}
 /* Line the moment slider up with the plot above it. The canvas reserves 56px
@@ -135,8 +138,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   <div class="grid">
     <div class="panel">
       <div class="ctrl">
-        <label for="h0">H₀ <output id="h0o"></output></label>
-        <input id="h0" type="range" min="40" max="100" step="0.5" value="70">
+        <label>H₀ <span class="numwrap"><input id="h0o" class="numin" type="number" min="40" max="100" step="0.01" inputmode="decimal" aria-label="H₀ value"> <span class="unit">km/s/Mpc</span></span></label>
+        <input id="h0" type="range" min="40" max="100" step="0.01" value="70" aria-label="H₀ (expansion rate today)">
         <small id="h0s"></small>
       </div>
       <div class="ctrl">
@@ -308,7 +311,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   function draw(){
     const s=state();
     const Or=OrOf(s.H0);
-    $('h0o').textContent=s.H0.toFixed(1)+' km/s/Mpc';
+    setNum('h0o',s.H0);
     $('h0s').textContent='= '+(s.H0/GYR).toFixed(4)+' per billion years (1/H₀ = '+(GYR/s.H0).toFixed(1)+' billion years)';
     setNum('omo',s.Om); setNum('olo',s.OL);
     $('rado').textContent='(Ω_rad = '+(4.15e-5/Math.pow(s.H0/100,2)).toExponential(1)+')';
@@ -682,7 +685,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   ['h0','om','ol','past','fut','tEmpty','tMatter','tOurs','tRad','logX','logY'].forEach(id=>$(id).addEventListener('input',draw));
   /* Typing a value drives the slider, which clamps it to the allowed range.
      The box is only rewritten when it is not the one being typed in. */
-  [['omo','om'],['olo','ol']].forEach(([numId,rangeId])=>{
+  [['h0o','h0'],['omo','om'],['olo','ol']].forEach(([numId,rangeId])=>{
     $(numId).addEventListener('input',()=>{
       const v=$(numId).value; if(v==='') return;
       $(rangeId).value=v; draw();
