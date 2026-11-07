@@ -181,8 +181,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       </div>
       <div class="range">
         <span>Show from</span>
-        <select id="past"><option>10</option><option selected>20</option><option>30</option><option>60</option></select>
-        <span>billion years ago to</span>
+        <select id="past"><option value="0">today</option><option>10</option><option selected>20</option><option>30</option><option>60</option></select>
+        <span id="pastUnit">billion years ago to</span>
         <select id="fut"><option>5</option><option selected>10</option><option>20</option><option>40</option><option>100</option></select>
         <span>billion years from now</span>
       </div>
@@ -314,6 +314,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     setNum('h0o',s.H0);
     $('h0s').textContent='= '+(s.H0/GYR).toFixed(4)+' per billion years (1/H₀ = '+(GYR/s.H0).toFixed(1)+' billion years)';
     setNum('omo',s.Om); setNum('olo',s.OL);
+    $('pastUnit').textContent = s.past===0 ? 'to' : 'billion years ago to';
     $('rado').textContent='(Ω_rad = '+(4.15e-5/Math.pow(s.H0/100,2)).toExponential(1)+')';
     const Ok=1-s.Om-s.OL-Or;
     $('geo').textContent='Ωm + ΩΛ = '+(s.Om+s.OL).toFixed(2)+(Math.abs(Ok)<0.005?' (flat)':(Ok>0?' (open)':' (closed)'));
@@ -355,7 +356,9 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       /* "show from" is a cosmic time, so on this axis it is an age: honour it
          when it falls after the Big Bang, otherwise show the whole history */
       const tauLeft=Math.max(tauMin, x0-tBang);
-      L0=Math.log10(tauLeft); L1=Math.log10(Math.max(x1-tBang,tauLeft*10));
+      /* only guard against a zero-width axis; a full decade of headroom would
+         stretch "from today" out to ten times the age of the universe */
+      L0=Math.log10(tauLeft); L1=Math.log10(Math.max(x1-tBang,tauLeft*1.01));
     }
     /* a log a axis fixed at the full five decades leaves the curve squashed in
        a corner once the time window narrows, so fit it to what is on screen */
