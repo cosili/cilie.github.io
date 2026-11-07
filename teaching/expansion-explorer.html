@@ -178,6 +178,10 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         <select id="fut"><option>5</option><option selected>10</option><option>20</option><option>40</option><option>100</option></select>
         <span>billion years from now</span>
       </div>
+      <div class="range">
+        <label><input type="checkbox" id="logY"> log scale on a</label>
+        <label><input type="checkbox" id="logX"> log scale on time (measured from the Big Bang)</label>
+      </div>
 
   <div class="comp-ctrl">
     <button type="button" id="todayBtn">Today</button>
@@ -218,6 +222,11 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   // Radiation today from the CMB temperature (photons + 3 neutrino species): Omega_rad h^2 = 4.15e-5
   function OrOf(H0){ return $('tRad').checked ? 4.15e-5/Math.pow(H0/100,2) : 0; }
   // integrate a'' = H0^2 a (OL - Om/(2a^3) - Or/a^4) from a=1, a'=H0 at t=0
+  /* How small a is allowed to get before the run stops and the last stretch to
+     a = 0 is done analytically. 3.2e-5 is z = 31000, where radiation is 90% of
+     the budget and matter 10%; matter-radiation equality at z = 3400 sits well
+     inside it. */
+  const A_MIN=3.2e-5;
   function evolve(Om,OL,H0,tmin,tmax,Or,hmax){
     Or=Or||0; hmax=hmax||0.02;
     const H=H0/GYR, H2=H*H;
@@ -227,7 +236,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       for(let i=0;i<200000;i++){
         if(dir<0? t<=tlim : t>=tlim) break;
         let h=Math.min(hmax, 0.004*a/Math.max(Math.abs(v),1e-9));
-        h=Math.max(h,1e-7);
+        h=Math.max(h,1e-11); /* the early universe needs steps far below a year */
         if(dir<0 && t-h<tlim) h=t-tlim; if(dir>0 && t+h>tlim) h=tlim-t;
         const d=dir*h;
         const k1a=v,k1v=acc(a);
@@ -237,8 +246,10 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         const na=a+d/6*(k1a+2*k2a+2*k3a+k4a), nv=v+d/6*(k1v+2*k2v+2*k3v+k4v);
         t+=d;
         if(na<1e-9) break; // pure vacuum energy: a -> 0 only in the infinite past
-        if(na<=0.003 && !(Om===0 && Or===0 && OL>=0.999)){ // a -> 0: Big Bang (dir<0) or Big Crunch (dir>0)
-          const f=(Om>0)?2/3:(Or>0?1/2:1); const rem=f*Math.max(na,0.003)/Math.max(Math.abs(nv),1e-12);
+        if(na<=A_MIN && !(Om===0 && Or===0 && OL>=0.999)){ // a -> 0: Big Bang (dir<0) or Big Crunch (dir>0)
+          /* a goes as t^1/2 under radiation, t^2/3 under matter, so the time
+             still to run is that power times a/|da/dt| */
+          const f=(Or>0)?1/2:(Om>0?2/3:1); const rem=f*Math.max(na,A_MIN)/Math.max(Math.abs(nv),1e-12);
           const tz=t+dir*rem; pts.push([t,Math.max(na,0)]); pts.push([tz,0]); end=tz; break;
         }
         if(dir<0 && v>0 && nv<=0) turned=true;
@@ -302,27 +313,133 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     ctx.clearRect(0,0,W,Hh);
     const m={l:56,r:16,t:16,b:44}, pw=W-m.l-m.r, ph=Hh-m.t-m.b;
     const x0=-s.past, x1=s.fut, y0=0, y1=2.5;
-    const X=t=>m.l+(t-x0)/(x1-x0)*pw, Y=a=>m.t+(1-(a-y0)/(y1-y0))*ph;
-    geom={m,pw,ph,x0,x1};
-    const ts=$('tslider'); ts.min=x0; ts.max=x1;
-    if(pick.mode==='time'){ if(pick.t<x0||pick.t>x1) pick.t=Math.max(x0,Math.min(x1,pick.t)); ts.value=pick.t; $('tsliderO').textContent=pick.t===0?'today':(Math.abs(pick.t).toFixed(2)+' billion years '+(pick.t<0?'ago':'from now')); }
-    else { $('tsliderO').textContent='(set by redshift z = '+pick.z+')'; }
+
+    /* Your universe has to be solved before the axes exist: a log time axis is
+       measured from its Big Bang, so the transform depends on where that is. */
+    let ms=models(s);
+    const solve=md=>{ md.r=evolve(md.Om,md.OL,s.H0,Math.min(x0-1,-400),Math.max(x1+1,0),md.Or); };
+    solve(ms[0]);
+    const tBang=ms[0].r.bang;
+
+    const logY=$('logY').checked;
+    const lxBox=$('logX');
+    lxBox.disabled=(tBang==null);   /* no Big Bang, so no age to take a log of */
+    lxBox.parentElement.style.opacity = lxBox.disabled ? .45 : 1;
+    const logX = lxBox.checked && !lxBox.disabled;
+
+    /* On a log age axis the reference curves cannot be read against yours: they
+       have their own ages, so the empty one begins before the origin and the
+       matter-only one is 4 billion years younger and has not begun at all.
+       Log mode therefore shows your universe alone. */
+    ['tEmpty','tMatter','tOurs'].forEach(id=>{
+      const b=$(id); b.disabled=logX; b.parentElement.style.opacity = logX ? .45 : 1;
+    });
+    if(logX) ms=ms.slice(0,1); else ms.slice(1).forEach(solve);
+
+    /* x in log mode is the age t - tBang, across the decades the run covers */
+    let L0=0,L1=1;
+    if(logX){
+      let tauMin=Infinity;
+      ms[0].r.pts.forEach(p=>{ const tau=p[0]-tBang; if(tau>0 && tau<tauMin) tauMin=tau; });
+      if(!isFinite(tauMin)||tauMin<=0) tauMin=1e-9;
+      /* "show from" is a cosmic time, so on this axis it is an age: honour it
+         when it falls after the Big Bang, otherwise show the whole history */
+      const tauLeft=Math.max(tauMin, x0-tBang);
+      L0=Math.log10(tauLeft); L1=Math.log10(Math.max(x1-tBang,tauLeft*10));
+    }
+    /* a log a axis fixed at the full five decades leaves the curve squashed in
+       a corner once the time window narrows, so fit it to what is on screen */
+    let K0=Math.log10(A_MIN), K1=Math.log10(y1);
+    if(logY){
+      let aLo=Infinity, aHi=-Infinity;
+      ms.forEach(md=>md.r.pts.forEach(p=>{
+        if(p[0]<x0||p[0]>x1) return;
+        if(logX && p[0]-tBang<=0) return;
+        if(p[1]>0){ if(p[1]<aLo) aLo=p[1]; if(p[1]>aHi) aHi=p[1]; }
+      }));
+      if(isFinite(aLo)&&isFinite(aHi)){
+        K0=Math.floor(Math.log10(Math.max(aLo,A_MIN)));
+        K1=Math.ceil(Math.log10(Math.min(aHi,y1)));
+        if(K1<=K0) K1=K0+1;
+      }
+    }
+    const OFF=-1e4; /* park a=0 or age<=0 far outside the clip */
+    const X = logX ? (t=>{const tau=t-tBang; return tau>0 ? m.l+(Math.log10(tau)-L0)/(L1-L0)*pw : OFF;})
+                   : (t=>m.l+(t-x0)/(x1-x0)*pw);
+    const Y = logY ? (a=>a>0 ? m.t+(1-(Math.log10(a)-K0)/(K1-K0))*ph : -OFF)
+                   : (a=>m.t+(1-(a-y0)/(y1-y0))*ph);
+    geom={m,pw,ph,x0,x1,logX,logY,L0,L1,tBang};
+
+    const ts=$('tslider');
+    if(logX){
+      ts.min=L0; ts.max=L1; ts.step=(L1-L0)/5000;  /* ~0.35% in age per step, so today stays finely adjustable too */
+      if(pick.mode==='time'){
+        const tau=Math.min(Math.max(pick.t-tBang,Math.pow(10,L0)),Math.pow(10,L1));
+        pick.t=tBang+tau; ts.value=Math.log10(tau);
+      }
+    } else {
+      ts.min=x0; ts.max=x1; ts.step=0.01;
+      if(pick.mode==='time'){ if(pick.t<x0||pick.t>x1) pick.t=Math.max(x0,Math.min(x1,pick.t)); ts.value=pick.t; }
+    }
+    if(pick.mode==='time'){
+      $('tsliderO').textContent = logX
+        ? ageText(pick.t-tBang)+' after the Big Bang'
+        : (pick.t===0?'today':(Math.abs(pick.t).toFixed(2)+' billion years '+(pick.t<0?'ago':'from now')));
+    } else { $('tsliderO').textContent='(set by redshift z = '+pick.z+')'; }
+
     ctx.font='12px system-ui, sans-serif'; ctx.fillStyle=css('--muted'); ctx.strokeStyle=css('--grid'); ctx.lineWidth=1;
-    const xstep=(x1-x0)>50?10:5;
-    for(let t=Math.ceil(x0/xstep)*xstep;t<=x1;t+=xstep){ctx.beginPath();ctx.moveTo(X(t),m.t);ctx.lineTo(X(t),m.t+ph);ctx.stroke();ctx.textAlign='center';ctx.fillText(String(t),X(t),m.t+ph+16);}
-    for(let a=0;a<=y1+1e-9;a+=0.5){ctx.beginPath();ctx.moveTo(m.l,Y(a));ctx.lineTo(m.l+pw,Y(a));ctx.stroke();ctx.textAlign='right';ctx.fillText(a.toFixed(1),m.l-8,Y(a)+4);}
+    if(logX){
+      /* decades, plus the 2..9 lines inside them: a window under a decade wide
+         would otherwise show a single gridline and read as empty */
+      const narrow=(L1-L0)<2;
+      for(let e=Math.floor(L0);e<=Math.ceil(L1);e++){
+        for(let k=1;k<10;k++){
+          const v=k*Math.pow(10,e), L=Math.log10(v);
+          if(L<L0-1e-9||L>L1+1e-9) continue;
+          const px=X(tBang+v), major=(k===1);
+          ctx.globalAlpha=major?1:.4;
+          ctx.beginPath();ctx.moveTo(px,m.t);ctx.lineTo(px,m.t+ph);ctx.stroke();
+          ctx.globalAlpha=1;
+          ctx.textAlign='center';
+          if(major) ctx.fillText(powLabel(e),px,m.t+ph+16);
+          else if(narrow&&(k===2||k===5)) ctx.fillText(e===0?String(k):k+'\u00d7'+powLabel(e),px,m.t+ph+16);
+        }
+      }
+    } else {
+      const xstep=(x1-x0)>50?10:5;
+      for(let t=Math.ceil(x0/xstep)*xstep;t<=x1;t+=xstep){ctx.beginPath();ctx.moveTo(X(t),m.t);ctx.lineTo(X(t),m.t+ph);ctx.stroke();ctx.textAlign='center';ctx.fillText(String(t),X(t),m.t+ph+16);}
+    }
+    if(logY){
+      const narrowY=(K1-K0)<2;
+      for(let e=Math.floor(K0);e<=Math.ceil(K1);e++){
+        for(let k=1;k<10;k++){
+          const v=k*Math.pow(10,e), L=Math.log10(v);
+          if(L<K0-1e-9||L>K1+1e-9) continue;
+          const py=Y(v), major=(k===1);
+          ctx.globalAlpha=major?1:.4;
+          ctx.beginPath();ctx.moveTo(m.l,py);ctx.lineTo(m.l+pw,py);ctx.stroke();
+          ctx.globalAlpha=1;
+          ctx.textAlign='right';
+          if(major) ctx.fillText(powLabel(e),m.l-8,py+4);
+          else if(narrowY&&(k===2||k===5)) ctx.fillText(e===0?String(k):k+'\u00d7'+powLabel(e),m.l-8,py+4);
+        }
+      }
+    } else {
+      for(let a=0;a<=y1+1e-9;a+=0.5){ctx.beginPath();ctx.moveTo(m.l,Y(a));ctx.lineTo(m.l+pw,Y(a));ctx.stroke();ctx.textAlign='right';ctx.fillText(a.toFixed(1),m.l-8,Y(a)+4);}
+    }
     ctx.fillStyle=css('--ink'); ctx.textAlign='center'; ctx.font='13px system-ui, sans-serif';
-    ctx.fillText('time from today (billion years)',m.l+pw/2,Hh-8);
-    ctx.save(); ctx.translate(14,m.t+ph/2); ctx.rotate(-Math.PI/2); ctx.fillText('size of the universe, a (today = 1)',0,0); ctx.restore();
+    ctx.fillText(logX?'time since the Big Bang (billion years, log scale)':'time from today (billion years)',m.l+pw/2,Hh-8);
+    ctx.save(); ctx.translate(14,m.t+ph/2); ctx.rotate(-Math.PI/2);
+    ctx.fillText('size of the universe, a (today = 1'+(logY?', log scale':'')+')',0,0); ctx.restore();
     ctx.strokeStyle=css('--axis'); ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(X(0),m.t); ctx.lineTo(X(0),m.t+ph); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle=css('--muted'); ctx.textAlign='left'; ctx.fillText('today',X(0)+4,m.t+12);
 
-    const ms=models(s);
-    ms.forEach(md=>{ md.r=evolve(md.Om,md.OL,s.H0,Math.min(x0-1,-400),Math.max(x1+1,0),md.Or); });
     ctx.save(); ctx.beginPath(); ctx.rect(m.l,m.t,pw,ph); ctx.clip();
     ms.slice().reverse().forEach(md=>{
       ctx.strokeStyle=md.color; ctx.lineWidth=md.w; ctx.setLineDash(md.dash); ctx.beginPath(); let started=false;
-      md.r.pts.forEach(p=>{ if(p[0]<x0-1||p[0]>x1+1) return; const px=X(p[0]),py=Y(Math.min(p[1],y1+0.5)); started?ctx.lineTo(px,py):ctx.moveTo(px,py); started=true;});
+      md.r.pts.forEach(p=>{ if(p[0]<x0-1||p[0]>x1+1) return;
+        if(logX && p[0]-tBang<=0){ started=false; return; }   /* before the origin of a log age axis */
+        const px=X(p[0]),py=Y(Math.min(p[1],y1+0.5)); started?ctx.lineTo(px,py):ctx.moveTo(px,py); started=true;});
       ctx.stroke(); ctx.setLineDash([]);
     });
     // picked moment
@@ -336,7 +453,9 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     ms.forEach(md=>{ if(md.ap==null||md.tp==null) return; ctx.fillStyle=md.color; ctx.strokeStyle=css('--bg'); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(X(md.tp),Y(md.ap),5.5,0,2*Math.PI); ctx.fill(); ctx.stroke(); });
     ctx.restore();
     const r=ms[0].r;
-    function mark(t,color,label,side){ if(t==null||t<x0||t>x1) return; const px=X(t), py=Y(0);
+    function mark(t,color,label,side){ if(t==null||t<x0||t>x1) return;
+      if(logX && t-tBang<=0) return;       /* the origin itself is off a log axis */
+      const px=X(t), py=logY? m.t+ph : Y(0);   /* a = 0 has no place on a log axis either */
       ctx.fillStyle=css('--bg'); ctx.strokeStyle=color; ctx.lineWidth=2.5; ctx.beginPath(); ctx.arc(px,py,4.5,0,2*Math.PI); ctx.fill(); ctx.stroke();
       ctx.fillStyle=color; ctx.font='600 12px system-ui, sans-serif';
       // flip the label inwards when it would run off the end of the plot
@@ -348,7 +467,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     ctx.fillStyle=css('--you'); ctx.beginPath(); ctx.arc(X(0),Y(1),5,0,2*Math.PI); ctx.fill();
 
     facts(s,Or);
-    cards(ms);
+    cards(ms,s.H0);
   // show "Your universe" over the plot; the others stay in the row below.
   // Wide screens only -- on a phone the plot is too narrow to cover.
   (function(){
@@ -405,6 +524,46 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   function sci(x){ return x.toExponential(1).replace(/e\+?/,'×10^').replace(/\^(-?\d+)/,(m0,e)=>'<sup>'+e+'</sup>'); }
   // Ω is measured against the critical density, which goes as H², so every Ω
   // runs away as the expansion halts at a turnaround. Say that in exponents.
+  function ageText(g){ // g in Gyr since a Big Bang
+    /* step up a unit before the rounded number would read "1000 thousand" */
+    const U=[[1e9,'years',0],[1e6,'thousand years',0],[1e3,'million years',0],[1,'billion years',2]];
+    for(let i=0;i<U.length;i++){
+      const v=g*U[i][0];
+      if(v<999.5 || U[i][0]===1) return v.toFixed(U[i][2])+' '+U[i][1];
+    }
+  }
+  const SUP={'-':'\u207b','0':'\u2070','1':'\u00b9','2':'\u00b2','3':'\u00b3','4':'\u2074',
+             '5':'\u2075','6':'\u2076','7':'\u2077','8':'\u2078','9':'\u2079'};
+  function powLabel(e){ return e===0 ? '1' : '10'+String(e).split('').map(c=>SUP[c]||c).join(''); }
+  const C_KMS=299792.458;
+  /* Distances to something we see now at scale factor a. Comoving distance is
+       D_C = c ∫ da / (a² H(a)),  with  a² H(a)/H0 = √(Or + Om a + Ok a² + OL a⁴).
+     Integrating in a rather than z keeps the integrand finite at high redshift.
+     That radicand is (a·ȧ/H0)², so it reaching zero means a turning point
+     lies between then and now and no light gets through -- hence the null. */
+  function distances(Om,OL,Or,H0,a){
+    if(!(a>0)||a>=1) return null;            /* only light already received */
+    const Ok=1-Om-OL-Or;
+    const f=x=>{ const q=Or+Om*x+Ok*x*x+OL*x*x*x*x; return q>0?1/Math.sqrt(q):NaN; };
+    const N=2000, h=(1-a)/N; let sum=f(a)+f(1);
+    if(!isFinite(sum)) return null;
+    for(let i=1;i<N;i++){ const v=f(a+i*h); if(!isFinite(v)) return null; sum+=v*(i%2?4:2); }
+    const DH=C_KMS/H0, Dc=DH*(h/3)*sum;      /* Hubble distance and comoving, Mpc */
+    let Dm=Dc;
+    if(Math.abs(Ok)>1e-6){
+      const rk=Math.sqrt(Math.abs(Ok)), x=rk*Dc/DH;
+      Dm = Ok>0 ? DH/rk*Math.sinh(x) : DH/rk*Math.sin(x);
+    }
+    if(!(Dm>0)) return null;
+    const z=1/a-1;
+    return {DL:Dm*(1+z), DA:Dm/(1+z)};
+  }
+  function dist(d){
+    if(d>=1e6) return (d/1e6).toFixed(1)+' Tpc';
+    if(d>=1000) return (d/1000).toFixed(2)+' Gpc';
+    if(d>=1) return d.toFixed(0)+' Mpc';
+    return (d*1000).toFixed(0)+' kpc';
+  }
   function fmt(x){ const ax=Math.abs(x); if(ax===0) return '0'; if(ax<0.001||ax>=1000) return sci(x); if(ax<0.1) return x.toFixed(3); return x.toFixed(2); }
   function pie(parts){ // parts: [[value,color],...] all >=0
     const tot=parts.reduce((u,p)=>u+p[0],0); const R=46,c=50;
@@ -417,7 +576,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       out+='<path d="M'+c+','+c+' L'+xA.toFixed(2)+','+yA.toFixed(2)+' A'+R+','+R+' 0 '+(fr>0.5?1:0)+' 1 '+xB.toFixed(2)+','+yB.toFixed(2)+' Z" fill="'+col+'"/>'; ang=a2; });
     return '<svg width="100" height="100" viewBox="0 0 100 100" aria-hidden="true">'+out+'</svg>';
   }
-  function cards(ms){
+  function cards(ms,H0){
     const cr=css('--rad'),cm=css('--mat'),cvv=css('--vac'),ck=css('--curv');
     $('pickinfo').textContent = pick.mode==='time' ? ('Picked: '+(pick.t===0?'today':(Math.abs(pick.t).toFixed(2)+' billion years '+(pick.t<0?'ago':'from now')))) : ('Picked: redshift z = '+pick.z);
     $('cards').innerHTML=ms.map(md=>{
@@ -434,8 +593,12 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       const E2=md.Or/a**4+md.Om/a**3+Ok0/a**2+md.OL;
       const or=md.Or/a**4/E2, om=md.Om/a**3/E2, ol=md.OL/E2, ok=Ok0/a**2/E2;
       const z=1/a-1;
-      let since=''; if(md.r.bang!=null){ const g=md.tp-md.r.bang; since=' ('+(g<0.001?(g*1e6).toFixed(0)+' thousand':(g<1?(g*1e3).toFixed(0)+' million':g.toFixed(2)+' billion'))+' years after its Big Bang)'; }
-      const when=(md.tp===0?'today':(Math.abs(md.tp).toFixed(2)+' billion years '+(md.tp<0?'ago':'from now')))+since+' · a = '+(a<0.01?a.toExponential(2):a.toFixed(3))+(z>1e-6?' · z = '+(z<10?z.toFixed(2):z.toFixed(0)):'');
+      /* in log mode the slider already reads out the age, so don't repeat it */
+      let since='';
+      if(md.r.bang!=null && !(geom&&geom.logX)) since=' ('+ageText(md.tp-md.r.bang)+' after its Big Bang)';
+      const dd=distances(md.Om,md.OL,md.Or,H0,a);
+      const dstr=dd?' · D<sub>L</sub> = '+dist(dd.DL)+' · D<sub>A</sub> = '+dist(dd.DA):'';
+      const when=(md.tp===0?'today':(Math.abs(md.tp).toFixed(2)+' billion years '+(md.tp<0?'ago':'from now')))+since+' · a = '+(a<0.01?a.toExponential(2):a.toFixed(3))+(z>1e-6?' · z = '+(z<10?z.toFixed(2):z.toFixed(0)):'')+dstr;
       const parts=[[or,cr],[om,cm],[Math.max(ol,0),cvv],[Math.max(ok,0),ck]];
       const rows='<tr><td><span class="dot" style="background:'+cr+'"></span></td><td>Radiation</td><td>'+fmt(or)+'</td></tr>'
         +'<tr><td><span class="dot" style="background:'+cm+'"></span></td><td>Matter</td><td>'+fmt(om)+'</td></tr>'
@@ -483,15 +646,25 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
 
   function pickFromEvent(e){
     if(!geom) return; const rect=cv.getBoundingClientRect(); const px=e.clientX-rect.left;
-    const {m,pw,x0,x1}=geom; let t=x0+(px-m.l)/pw*(x1-x0); t=Math.max(x0,Math.min(x1,t));
-    if(Math.abs(t)<(x1-x0)*0.006) t=0;
+    const {m,pw,x0,x1,logX,L0,L1,tBang}=geom; let t;
+    if(logX){
+      const L=Math.max(L0,Math.min(L1,L0+(px-m.l)/pw*(L1-L0)));
+      t=tBang+Math.pow(10,L);
+    } else {
+      t=Math.max(x0,Math.min(x1,x0+(px-m.l)/pw*(x1-x0)));
+      if(Math.abs(t)<(x1-x0)*0.006) t=0;   /* snap to today */
+    }
     pick={mode:'time',t,z:null}; draw();
   }
   let dragging=false;
   cv.addEventListener('pointerdown',e=>{dragging=true; try{cv.setPointerCapture(e.pointerId);}catch(_){} pickFromEvent(e);});
   cv.addEventListener('pointermove',e=>{ if(dragging) pickFromEvent(e); });
   cv.addEventListener('pointerup',()=>{dragging=false;});
-  $('tslider').addEventListener('input',e=>{ let t=+e.target.value; if(Math.abs(t)<0.05) t=0; pick={mode:'time',t,z:null}; draw(); });
+  $('tslider').addEventListener('input',e=>{
+    const v=+e.target.value; let t;
+    if(geom&&geom.logX){ t=geom.tBang+Math.pow(10,v); }   /* equal steps are equal factors */
+    else { t=v; if(Math.abs(t)<0.05) t=0; }
+    pick={mode:'time',t,z:null}; draw(); });
   $('todayBtn').addEventListener('click',()=>{pick={mode:'time',t:0,z:null}; draw();});
   function goZ(){ const z=parseFloat($('zin').value); if(!(z>=0)) return; pick={mode:'z',t:null,z}; draw(); }
   $('zBtn').addEventListener('click',goZ);
@@ -499,7 +672,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   $('thrBtn').addEventListener('click',()=>{const Om=+$('om').value; const T=Math.ceil(thresholdOL(Om,OrOf(+$('h0').value))/0.0005)*0.0005; $('ol').value=T.toFixed(4); $('past').value='60'; draw();});
   document.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{const [mm,l]=b.dataset.p.split(',');$('h0').value=70;$('om').value=mm;$('ol').value=l;if(b.dataset.past)$('past').value=b.dataset.past;if(b.dataset.fut)$('fut').value=b.dataset.fut;draw();}));
 
-  ['h0','om','ol','past','fut','tEmpty','tMatter','tOurs','tRad'].forEach(id=>$(id).addEventListener('input',draw));
+  ['h0','om','ol','past','fut','tEmpty','tMatter','tOurs','tRad','logX','logY'].forEach(id=>$(id).addEventListener('input',draw));
   window.addEventListener('resize',draw);
   draw();
 })();
