@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Teaching resources — Cosmin Ilie</title>
+<meta name="description" content="Interactive tools for teaching cosmology, built by Cosmin Ilie for the first-year seminar Our Universe: 95% Unknown. Free to use.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --space:#070c18;
+  --paper:#ffffff;
+  --cream:#f7f5ef;
+  --line:#e4e0d6;
+  --text:#16202f;
+  --muted:#5d6b80;
+  --gold:#e9a21b;
+  --maroon:#821019;
+  --shadow:0 10px 30px rgba(9,16,32,.10);
+  --radius:16px;
+  --wrap:1120px;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;background:var(--paper);color:var(--text);
+  font-family:'Inter',system-ui,-apple-system,Segoe UI,sans-serif;
+  font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;
+}
+a{color:#134b7a;text-decoration:none}
+a:hover{text-decoration:underline}
+h1,h2,h3{font-family:'Fraunces',Georgia,serif;font-weight:600;line-height:1.15;margin:0 0 .5em}
+h1{font-size:clamp(2.1rem,5vw,3.1rem);letter-spacing:-.02em}
+h3{font-size:1.25rem}
+p{margin:0 0 1em}
+.wrap{max-width:var(--wrap);margin:0 auto;padding:0 20px}
+
+header.site{background:rgba(7,12,24,.97);border-bottom:1px solid rgba(255,255,255,.10)}
+.bar{display:flex;align-items:center;gap:18px;max-width:var(--wrap);margin:0 auto;padding:10px 20px}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;font-family:'Fraunces',serif;font-size:1.12rem;font-weight:600;white-space:nowrap}
+.brand:hover{text-decoration:none}
+.brand .dot{width:11px;height:11px;border-radius:50%;background:radial-gradient(circle at 32% 32%,#fff6d8,var(--gold) 55%,#a85f00);box-shadow:0 0 14px rgba(233,162,27,.85)}
+.bar nav{margin-left:auto;display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.bar nav::-webkit-scrollbar{display:none}
+.bar nav a{font-size:.93rem;font-weight:500;color:#c6cfe0;padding:9px 13px;border-radius:9px;
+  transition:.18s;white-space:nowrap}
+.bar nav a:hover{color:#fff;background:rgba(255,255,255,.09);text-decoration:none}
+/* this page lives under Teaching, so mark that tab the way the site does */
+.bar nav a[aria-current]{color:#fff;background:rgba(233,162,27,.18)}
+/* on a phone the name and seven tabs will not sit on one line */
+@media(max-width:700px){
+  .bar{flex-wrap:wrap;gap:6px;padding:10px 16px}
+  .bar nav{margin-left:0;width:100%}
+  .bar nav a{padding:7px 10px}
+  .bar nav a:first-child{margin-left:-10px}
+}
+
+section.block{padding:50px 0}
+section.block.cream{background:var(--cream);border-block:1px solid var(--line)}
+.kicker{font-size:.78rem;letter-spacing:.17em;text-transform:uppercase;color:var(--gold);font-weight:700;margin-bottom:10px}
+.section-head{max-width:760px;margin-bottom:34px}
+.section-head p{color:var(--muted);font-size:1.05rem;margin-bottom:0}
+
+.grid{display:grid;gap:22px;grid-template-columns:repeat(2,1fr)}
+@media(max-width:760px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);padding:24px;box-shadow:var(--shadow);transition:.2s;display:block;color:inherit}
+a.card:hover{transform:translateY(-2px);border-color:#cfc8b6;text-decoration:none}
+a.card h3{color:var(--text);margin-bottom:.35em}
+.card .tag{font-size:.72rem;letter-spacing:.12em;text-transform:uppercase;font-weight:700;color:var(--gold);display:block;margin-bottom:8px}
+.card p{color:var(--muted);font-size:.97rem}
+.card .meta{font-size:.86rem;color:var(--muted);border-top:1px solid var(--line);padding-top:12px;margin:14px 0 0}
+.card .arrow{color:var(--maroon);font-weight:600;font-size:.92rem;margin:12px 0 0}
+
+.note{max-width:760px;color:var(--muted);font-size:.95rem}
+.note strong{color:var(--text)}
+
+footer.site{background:var(--space);color:#93a2ba;padding:44px 0 30px;border-top:1px solid rgba(255,255,255,.08)}
+footer.site a{color:#cfd9ea}
+footer.site p{margin:0 0 6px;font-size:.93rem}
+</style>
+</head>
+<body>
+
+<header class="site">
+  <div class="bar">
+    <a class="brand" href="../"><span class="dot"></span>Cosmin Ilie</a>
+    <nav aria-label="Sections">
+      <a href="../#home">Home</a>
+      <a href="../#research">Research</a>
+      <a href="../#publications">Publications</a>
+      <a href="../#mentoring">Mentoring</a>
+      <a href="../#teaching" aria-current="page">Teaching</a>
+      <a href="../#press">Press</a>
+      <a href="../#cv">CV</a>
+    </nav>
+  </div>
+</header>
+
+<section class="block">
+  <div class="wrap">
+    <div class="section-head">
+      <div class="kicker">Teaching resources</div>
+      <h1>Interactive tools</h1>
+      <p>Tools I build for my own classroom, mostly for the first-year seminar
+        <em>Our Universe: 95% Unknown</em>. Each one runs entirely in your browser:
+        nothing to install, no account, and they keep working offline once the page
+        has loaded. Free for anyone to use or adapt for teaching.</p>
+    </div>
+
+    <div class="grid">
+      <a class="card" href="expansion-explorer.html">
+        <span class="tag">Cosmology</span>
+        <h3>Expansion Explorer</h3>
+        <p>Set the expansion rate and how much matter and vacuum energy a universe
+          holds, and watch how that decides its whole history — whether it had a Big
+          Bang, whether the expansion speeds up or slows down, and whether it expands
+          forever or falls back. A pie chart on the plot shows what the universe is
+          made of at any moment you pick.</p>
+        <p class="meta">Friedmann equation · age of the universe · acceleration ·
+          redshift · matter–radiation equality</p>
+        <p class="arrow">Open the tool →</p>
+      </a>
+
+      <a class="card" href="hubble-fitter.html">
+        <span class="tag">Data analysis</span>
+        <h3>Hubble Fitter</h3>
+        <p>Measure the Hubble constant yourself by fitting a line to real data: first
+          Hubble's own 1929 galaxies, then the 1998 supernovae that revealed the
+          accelerating universe. Seeing how far off Hubble's value was, and why, does
+          more for students than being told the number.</p>
+        <p class="meta">Hubble's law · fitting by eye · reading error bars ·
+          Hubble 1929 · Riess 1998</p>
+        <p class="arrow">Open the tool →</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="block cream">
+  <div class="wrap">
+    <p class="note"><strong>Using these in your own course.</strong> They are plain
+      web pages with no dependencies, so you can link to them directly, or save a page
+      and hand it out. If you use one and something is unclear or wrong, I would like
+      to hear about it — <a href="mailto:cilie@colgate.edu">cilie@colgate.edu</a>.</p>
+  </div>
+</section>
+
+<footer class="site">
+  <div class="wrap">
+    <p><a href="../">cosminilie.com</a> · Cosmin Ilie, Department of Physics &amp;
+      Astronomy, Colgate University</p>
+    <p>Teaching resources are free to use.</p>
+  </div>
+</footer>
+
+</body>
+</html>
