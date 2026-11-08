@@ -11,6 +11,7 @@
   --ok:#137a4b; --warn:#b4231b; --rad:#e76f51; --mat:#2a9d8f; --vac:#6d5bd0; --cur:#0f766e; --curv:#b8bfcc;
   --gasI:rgba(217,154,0,.16); --gasN:rgba(70,100,150,.13);
   --dawn:rgba(125,85,200,.16);
+  --cmb:rgba(20,30,60,.07);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -19,6 +20,7 @@
     --ok:#4ade80; --warn:#f87171; --rad:#f4a261; --mat:#4fd1c5; --vac:#a78bfa; --cur:#5eead4; --curv:#5b6580;
     --gasI:rgba(255,209,102,.15); --gasN:rgba(120,155,225,.15);
     --dawn:rgba(167,139,250,.20);
+    --cmb:rgba(255,255,255,.07);
   }
 }
 :root[data-theme="dark"]{
@@ -27,6 +29,7 @@
   --ok:#4ade80; --warn:#f87171; --rad:#f4a261; --mat:#4fd1c5; --vac:#a78bfa; --cur:#5eead4; --curv:#5b6580;
     --gasI:rgba(255,209,102,.15); --gasN:rgba(120,155,225,.15);
     --dawn:rgba(167,139,250,.20);
+    --cmb:rgba(255,255,255,.07);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
@@ -329,7 +332,14 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
      and it is complete by z ~ 5.6 (Lyman-alpha forest). Every boundary is a
      fixed redshift, so the time it lands at is read off whichever universe is
      on the plot. */
-  const Z_REC=1100, Z_REION_START=15, Z_REION_END=5.6;
+  /* Recombination is not an instant. The free electron fraction falls from 0.9
+     at z = 1450 to 0.01 at z = 890, half way at z = 1270, so hydrogen turns
+     neutral across a stretch rather than at a line. The CMB photons we see
+     last scattered around the peak of the visibility function at z = 1090,
+     with a half-maximum band of 970 to 1170. */
+  const Z_REC_START=1450, Z_REC_END=890;
+  const Z_CMB_HI=1170, Z_CMB_LO=970;
+  const Z_REION_START=15, Z_REION_END=5.6;
   const Z_DAWN_HI=30, Z_DAWN_LO=20;
   /* fixed redshifts, so where each one lands in time is read off whichever
      universe is on the plot. Records as of November 2026. */
@@ -426,18 +436,24 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
 
   function epochs(ctx,m,pw,ph,X,pts){
     const tOf=z=>timeOfA(pts,1/(1+z));
-    const t1=tOf(Z_REION_START), t2=tOf(Z_REION_END), tRec=tOf(Z_REC);
+    const t1=tOf(Z_REION_START), t2=tOf(Z_REION_END);
+    const tr1=tOf(Z_REC_START), tr2=tOf(Z_REC_END);
     if(t1==null||t2==null) return;
     const L=m.l,R=m.l+pw,T=m.t,B=m.t+ph, cl=x=>Math.max(L,Math.min(R,x));
     const x1=cl(X(t1)), x2=cl(X(t2));
     const ion=css('--gasI'), neu=css('--gasN');
 
     ctx.save(); ctx.beginPath(); ctx.rect(L,T,pw,ph); ctx.clip();
-    /* ionized plasma, before recombination */
-    if(tRec!=null){ const xr=cl(X(tRec));
-      if(xr>L){ ctx.fillStyle=ion; ctx.fillRect(L,T,xr-L,ph); }
+    let rx1=null,rx2=null;
+    if(tr1!=null&&tr2!=null){ rx1=cl(X(tr1)); rx2=cl(X(tr2));
+      /* ionized plasma, before recombination gets going */
+      if(rx1>L){ ctx.fillStyle=ion; ctx.fillRect(L,T,rx1-L,ph); }
+      /* recombination itself, fading from ionized to neutral across the band */
+      if(rx2>rx1){ const g=ctx.createLinearGradient(rx1,0,rx2,0);
+        g.addColorStop(0,ion); g.addColorStop(1,neu);
+        ctx.fillStyle=g; ctx.fillRect(rx1,T,rx2-rx1,ph); }
       /* the dark ages: neutral hydrogen */
-      if(x1>xr){ ctx.fillStyle=neu; ctx.fillRect(xr,T,x1-xr,ph); }
+      if(x1>rx2){ ctx.fillStyle=neu; ctx.fillRect(rx2,T,x1-rx2,ph); }
     } else if(x1>L){ ctx.fillStyle=neu; ctx.fillRect(L,T,x1-L,ph); }
     /* reionization itself, fading from neutral to ionized across the band */
     if(x2>x1){ const g=ctx.createLinearGradient(x1,0,x2,0);
@@ -445,6 +461,16 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       ctx.fillStyle=g; ctx.fillRect(x1,T,x2-x1,ph); }
     /* ionized again, by starlight */
     if(R>x2){ ctx.fillStyle=ion; ctx.fillRect(x2,T,R-x2,ph); }
+
+    /* where the CMB photons we see last scattered: a band inside the fade,
+       not an edge, so it is drawn over it rather than instead of it */
+    const c1=tOf(Z_CMB_HI), c2=tOf(Z_CMB_LO);
+    let cx1=null,cx2=null;
+    if(c1!=null&&c2!=null){ cx1=cl(X(c1)); cx2=cl(X(c2));
+      if(cx2>cx1){ ctx.fillStyle=css('--cmb'); ctx.fillRect(cx1,T,cx2-cx1,ph);
+        ctx.save(); ctx.strokeStyle=css('--axis'); ctx.lineWidth=1; ctx.setLineDash([3,3]);
+        [cx1,cx2].forEach(x=>{ ctx.beginPath(); ctx.moveTo(x,T); ctx.lineTo(x,T+ph); ctx.stroke(); });
+        ctx.restore(); } }
 
     /* cosmic dawn, inside the dark ages: the first stars light up */
     const d1=tOf(Z_DAWN_HI), d2=tOf(Z_DAWN_LO);
@@ -454,18 +480,20 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
 
     ctx.font='11px system-ui, sans-serif'; ctx.fillStyle=css('--muted');
     ctx.strokeStyle=css('--muted'); ctx.lineWidth=1.2;
-    /* the top row is first come first served, and reionization has the floor */
-    const taken=[];
+    /* each row is first come first served, and the named epochs go down first */
+    const taken=[[],[]];
     const place=(txt,x,align,row)=>{
       const w=ctx.measureText(txt).width;
       const a=align==='center'?x-w/2:x, b=a+w;
-      if(row===0){ if(taken.some(t=>b>t[0]-6&&a<t[1]+6)) return; taken.push([a,b]); }
       if(b<L||a>R) return;
+      if(taken[row].some(t=>b>t[0]-6&&a<t[1]+6)) return;
+      taken[row].push([a,b]);
       ctx.textAlign=align; ctx.fillText(txt,x,T+14+row*14);
     };
     place('reionization',(x1+x2)/2,'center',0);
-    if(tRec!=null){ const xr=cl(X(tRec)); if(xr>L+2&&xr<R-2) place('recombination',xr+5,'left',0); }
-    /* a row down, so it cannot run into either of those */
+    if(rx1!=null&&rx2>rx1) place('recombination',(rx1+rx2)/2,'center',0);
+    /* a row down, so these cannot run into the two above */
+    if(cx1!=null&&cx2>cx1) place('CMB last scattered',(cx1+cx2)/2,'center',1);
     if(dx1!=null&&dx2>dx1+1) place('cosmic dawn',(dx1+dx2)/2,'center',1);
 
     const y=B-16;
