@@ -51,8 +51,9 @@ h1{font:600 1.7rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
 .ctrl label .numwrap{display:inline-flex;align-items:baseline;gap:5px}
 .ctrl label .unit{font-weight:700;color:var(--accent)}
 .ctrl small{color:var(--muted);display:block;margin-top:2px}
-#refoff{display:block;color:var(--muted);font-size:.8rem;margin:2px 0 4px}
-#refoff[hidden]{display:none}
+#refoff,#pastoff{display:block;color:var(--muted);font-size:.8rem;margin:2px 0 4px}
+#refoff[hidden],#pastoff[hidden]{display:none}
+#pastoff{flex-basis:100%}
 input[type=range]{width:100%;accent-color:var(--accent)}
 /* Line the moment slider up with the plot above it. The canvas reserves 56px
    on the left for the y axis and 16px on the right, so the data area is inset
@@ -199,6 +200,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         <span id="pastUnit">billion years ago to</span>
         <select id="fut"><option>5</option><option selected>10</option><option>20</option><option>40</option><option>100</option></select>
         <span>billion years from now</span>
+        <small id="pastoff" hidden>Earlier than the Big Bang, so the axis starts there.</small>
       </div>
       <div class="range">
         <label><input type="checkbox" id="logY"> log scale on a</label>
@@ -572,6 +574,10 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       const b=$(id); b.disabled=logX; b.parentElement.style.opacity = logX ? .45 : 1;
     });
     $('refoff').hidden=!logX;
+    /* "show from" is a cosmic time, so on a log age axis anything earlier than
+       the Big Bang is the same view: there is nothing before it to show. Say
+       so, rather than leaving the control looking broken. */
+    $('pastoff').hidden = !(logX && tBang!=null && x0<=tBang);
     if(logX) ms=ms.slice(0,1); else ms.slice(1).forEach(solve);
 
     /* x in log mode is the age t - tBang, across the decades the run covers */
