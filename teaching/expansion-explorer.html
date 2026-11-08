@@ -248,10 +248,20 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   function OrOf(H0){ return $('tRad').checked ? 4.15e-5/Math.pow(H0/100,2) : 0; }
   // integrate a'' = H0^2 a (OL - Om/(2a^3) - Or/a^4) from a=1, a'=H0 at t=0
   /* How small a is allowed to get before the run stops and the last stretch to
-     a = 0 is done analytically. 3.2e-5 is z = 31000, where radiation is 90% of
-     the budget and matter 10%; matter-radiation equality at z = 3400 sits well
-     inside it. */
-  const A_MIN=3.2e-5;
+     a = 0 is done analytically.
+
+     Physics would allow much deeper: the ingredients here stay honest until
+     electron-positron annihilation at z of about 2e9, where the relativistic
+     degrees of freedom change and Or stops scaling as a^-4. Arithmetic stops
+     us first. Times are carried from today, and 13.46 Gyr in double precision
+     has a resolution of 3e-15 Gyr, which is 3 microseconds of a year. The age
+     at a = 3e-7 is 0.068 years, so there is still room; at a = 1e-7 it is
+     0.0076 years and the run loses several percent to cancellation.
+
+     3e-7 is z = 3.3e6, a temperature of about 780 eV. Checked against exact
+     quadrature: 0.09% in the age, with matter-radiation equality at z = 3400
+     and radiation's 90% share at z = 31000 both far inside. */
+  const A_MIN=3e-7;
   function evolve(Om,OL,H0,tmin,tmax,Or,hmax){
     Or=Or||0; hmax=hmax||0.02;
     const H=H0/GYR, H2=H*H;
@@ -261,7 +271,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       for(let i=0;i<200000;i++){
         if(dir<0? t<=tlim : t>=tlim) break;
         let h=Math.min(hmax, 0.004*a/Math.max(Math.abs(v),1e-9));
-        h=Math.max(h,1e-11); /* the early universe needs steps far below a year */
+        h=Math.max(h,1e-13); /* the early universe needs steps far below a year */
         if(dir<0 && t-h<tlim) h=t-tlim; if(dir>0 && t+h>tlim) h=tlim-t;
         const d=dir*h;
         const k1a=v,k1v=acc(a);
@@ -382,7 +392,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
      universe, so these ticks slide when the sliders do -- they are not fixed
      to the time axis. Only the past carries a redshift: after today a is
      bigger than 1 and the light would be blueshifted instead. */
-  const Z_TICKS=[0,0.2,0.5,1,1.5,2,3,5,7,10,15,20,30,50,100,200,500,1000,2000,5000,10000,20000];
+  const Z_TICKS=[0,0.2,0.5,1,1.5,2,3,5,7,10,15,20,30,50,100,200,500,1000,2000,5000,10000,20000,50000,1e5,2e5,5e5,1e6,2e6,3e6];
   function zaxis(ctx,m,pw,X,pts,refs){
     const L=m.l,R=m.l+pw;
     ctx.save();
@@ -393,7 +403,11 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       const t = z===0 ? 0 : timeOfA(pts,1/(1+z));
       if(t==null) return;
       const x=X(t); if(!(x>=L-0.5&&x<=R+0.5)) return;
-      const lab=String(z), w=ctx.measureText(lab).width, a=x-w/2, b=x+w/2;
+      /* past five figures the plain number is wider than the gap it sits in */
+      const lab = z>=1e5 ? (Math.log10(z)%1===0 ? powLabel(Math.round(Math.log10(z)))
+                                                : String(z/Math.pow(10,Math.floor(Math.log10(z))))+'\u00d7'+powLabel(Math.floor(Math.log10(z))))
+                         : String(z);
+      const w=ctx.measureText(lab).width, a=x-w/2, b=x+w/2;
       if(a<L-2||b>R+2) return;
       if(taken.some(q=>b>q[0]-8&&a<q[1]+8)) return;   /* never let them touch */
       taken.push([a,b]);
@@ -684,7 +698,11 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     ctx.save(); ctx.translate(14,m.t+ph/2); ctx.rotate(-Math.PI/2);
     ctx.fillText('size of the universe, a (today = 1'+(logY?', log scale':'')+')',0,0); ctx.restore();
     ctx.strokeStyle=css('--axis'); ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(X(0),m.t); ctx.lineTo(X(0),m.t+ph); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle=css('--muted'); ctx.textAlign='left'; ctx.fillText('today',X(0)+4,m.t+12);
+    ctx.fillStyle=css('--muted');
+    /* a deeper log axis pushes today almost to the right edge, so the label
+       falls back to the left of its line rather than running off */
+    {const tx=X(0), tw=ctx.measureText('today').width, right=tx+4+tw<=m.l+pw;
+     ctx.textAlign=right?'left':'right'; ctx.fillText('today',tx+(right?4:-4),m.t+12);}
 
     const ev=$('events');
     ev.disabled=!logX; ev.parentElement.style.opacity = logX ? 1 : .45;
@@ -793,7 +811,11 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   // runs away as the expansion halts at a turnaround. Say that in exponents.
   function ageText(g){ // g in Gyr since a Big Bang
     /* step up a unit before the rounded number would read "1000 thousand" */
-    const U=[[1e9,'years',0],[1e6,'thousand years',0],[1e3,'million years',0],[1,'billion years',2]];
+    /* the run now reaches a = 3e-7, where the universe is weeks old, so the
+       ladder has to start below a year or the readout says "0 years" */
+    const U=[[3.1557e16,'seconds',0],[5.2595e14,'minutes',0],[8.7658e12,'hours',0],
+             [3.6524e11,'days',0],[1e9,'years',0],
+             [1e6,'thousand years',0],[1e3,'million years',0],[1,'billion years',2]];
     for(let i=0;i<U.length;i++){
       const v=g*U[i][0];
       if(v<999.5 || U[i][0]===1) return v.toFixed(U[i][2])+' '+U[i][1];
@@ -886,7 +908,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         else why='Outside the computed range.';
         return '<div class="card">'+head+'<div class="note">'+why+'</div></div>';
       }
-      const a=Math.max(md.ap,1e-6), Ok0=1-md.Om-md.OL-md.Or;
+      /* floor well under A_MIN, or the card stops following the run */
+      const a=Math.max(md.ap,1e-12), Ok0=1-md.Om-md.OL-md.Or;
       const E2=md.Or/a**4+md.Om/a**3+Ok0/a**2+md.OL;
       const or=md.Or/a**4/E2, om=md.Om/a**3/E2, ol=md.OL/E2, ok=Ok0/a**2/E2;
       const z=1/a-1;
