@@ -10,6 +10,7 @@
   --ours:#d99a00; --matter:#d23c5f; --empty:#6f8aa8; --you:#2563eb; --band:#eef1fb; --accent:#2563eb;
   --ok:#137a4b; --warn:#b4231b; --rad:#e76f51; --mat:#2a9d8f; --vac:#6d5bd0; --cur:#0f766e; --curv:#b8bfcc;
   --gasI:rgba(217,154,0,.16); --gasN:rgba(70,100,150,.13);
+  --dawn:rgba(125,85,200,.16);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
@@ -17,6 +18,7 @@
     --ours:#ffd166; --matter:#ef476f; --empty:#9fb3c8; --you:#5eb0ff; --band:#1a2342; --accent:#5eb0ff;
     --ok:#4ade80; --warn:#f87171; --rad:#f4a261; --mat:#4fd1c5; --vac:#a78bfa; --cur:#5eead4; --curv:#5b6580;
     --gasI:rgba(255,209,102,.15); --gasN:rgba(120,155,225,.15);
+    --dawn:rgba(167,139,250,.20);
   }
 }
 :root[data-theme="dark"]{
@@ -24,6 +26,7 @@
   --ours:#ffd166; --matter:#ef476f; --empty:#9fb3c8; --you:#5eb0ff; --band:#1a2342; --accent:#5eb0ff;
   --ok:#4ade80; --warn:#f87171; --rad:#f4a261; --mat:#4fd1c5; --vac:#a78bfa; --cur:#5eead4; --curv:#5b6580;
     --gasI:rgba(255,209,102,.15); --gasN:rgba(120,155,225,.15);
+    --dawn:rgba(167,139,250,.20);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
@@ -323,6 +326,14 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
      fixed redshift, so the time it lands at is read off whichever universe is
      on the plot. */
   const Z_REC=1100, Z_REION_START=15, Z_REION_END=5.6;
+  const Z_DAWN_HI=30, Z_DAWN_LO=20;
+  /* fixed redshifts, so where each one lands in time is read off whichever
+     universe is on the plot. Records as of November 2026. */
+  const EVENTS=[
+    {z:14.44, name:'MoM-z14',     text:'most distant galaxy with a measured redshift'},
+    {z:2.903, name:'SN 2023adsy', text:'most distant Type Ia supernova confirmed'},
+    {z:0.83,  name:'SN 1997ap',   text:'most distant supernova in the 1998 data set'}
+  ];
 
   /* wrap, then tighten to the narrowest width that still needs the same number
      of lines, so a label never ends on a one-word orphan line */
@@ -351,6 +362,64 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     for(let i=0;i<lines.length;i++) ctx.fillText(lines[i],x,y-13*(lines.length-1-i));
   }
 
+  function evDot(ctx,x,y,color){
+    ctx.fillStyle=color; ctx.strokeStyle=css('--bg'); ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(x,y,5,0,2*Math.PI); ctx.fill(); ctx.stroke();
+  }
+  function evBox(ctx,lines,bx,by,w){
+    const h=lines.length*13+9;
+    ctx.fillStyle=css('--panel'); ctx.strokeStyle=css('--grid'); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.rect(bx,by,w,h); ctx.fill(); ctx.stroke();
+    ctx.textAlign='left';
+    ctx.fillStyle=css('--ink'); ctx.font='600 11px system-ui, sans-serif';
+    ctx.fillText(lines[0],bx+6,by+15);
+    ctx.fillStyle=css('--muted'); ctx.font='11px system-ui, sans-serif';
+    for(let i=1;i<lines.length;i++) ctx.fillText(lines[i],bx+6,by+15+13*i);
+  }
+
+  /* dots on your own curve, with their captions stacked in the open wedge
+     under it. Leaders are drawn first so a box hides any that passes behind. */
+  function markers(ctx,m,pw,ph,X,Y,pts,Om,Or){
+    const L=m.l,R=m.l+pw,T=m.t,B=m.t+ph;
+    ctx.save(); ctx.beginPath(); ctx.rect(L,T,pw,ph); ctx.clip();
+    ctx.font='11px system-ui, sans-serif';
+
+    /* equality is not a fixed redshift: it moves with the matter/radiation mix */
+    if(Or>0 && Om>0){
+      const aEq=Or/Om, tEq=timeOfA(pts,aEq);
+      if(tEq!=null){ const px=X(tEq), py=Y(aEq);
+        if(px>L+4&&px<R-4&&py>T&&py<B){ evDot(ctx,px,py,css('--mat'));
+          ctx.fillStyle=css('--muted');
+          const lab='matter\u2013radiation equality', lw=ctx.measureText(lab).width;
+          const left = px-9-lw > L+2;   /* otherwise it would run off the y axis */
+          ctx.textAlign = left?'right':'left';
+          ctx.fillText(lab,px+(left?-9:9),py-7); } }
+    }
+
+    const live=[];
+    EVENTS.forEach(e=>{ const t=timeOfA(pts,1/(1+e.z)); if(t==null) return;
+      const px=X(t), py=Y(1/(1+e.z));
+      if(px<L||px>R||py<T||py>B) return;
+      live.push({e:e,px:px,py:py}); });
+
+    if(live.length && pw>=340){
+      const boxW=Math.min(172,pw-24), bx=R-6-boxW;
+      const blocks=live.map(o=>[o.e.name].concat(wrapLines(ctx,o.e.text,boxW-12)));
+      const hs=blocks.map(b=>b.length*13+9);
+      const total=hs.reduce((u,v)=>u+v,0)+8*(live.length-1);
+      const tops=[]; let yy=Math.max(T+8,B-58-total);
+      hs.forEach(h=>{ tops.push(yy); yy+=h+8; });
+      ctx.strokeStyle=css('--axis'); ctx.lineWidth=1;
+      live.forEach((o,i)=>{ ctx.beginPath(); ctx.moveTo(o.px,o.py); ctx.lineTo(bx+12,tops[i]); ctx.stroke(); });
+      live.forEach((o,i)=>{ evDot(ctx,o.px,o.py,css('--you')); evBox(ctx,blocks[i],bx,tops[i],boxW); });
+    } else {
+      /* too narrow for captions: name the dots instead */
+      live.forEach(o=>{ evDot(ctx,o.px,o.py,css('--you'));
+        ctx.fillStyle=css('--muted'); ctx.textAlign='right'; ctx.fillText(o.e.name,o.px-8,o.py+16); });
+    }
+    ctx.restore();
+  }
+
   function epochs(ctx,m,pw,ph,X,pts){
     const tOf=z=>timeOfA(pts,1/(1+z));
     const t1=tOf(Z_REION_START), t2=tOf(Z_REION_END), tRec=tOf(Z_REC);
@@ -373,11 +442,27 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     /* ionized again, by starlight */
     if(R>x2){ ctx.fillStyle=ion; ctx.fillRect(x2,T,R-x2,ph); }
 
+    /* cosmic dawn, inside the dark ages: the first stars light up */
+    const d1=tOf(Z_DAWN_HI), d2=tOf(Z_DAWN_LO);
+    let dx1=null,dx2=null;
+    if(d1!=null&&d2!=null){ dx1=cl(X(d1)); dx2=cl(X(d2));
+      if(dx2>dx1){ ctx.fillStyle=css('--dawn'); ctx.fillRect(dx1,T,dx2-dx1,ph); } }
+
     ctx.font='11px system-ui, sans-serif'; ctx.fillStyle=css('--muted');
     ctx.strokeStyle=css('--muted'); ctx.lineWidth=1.2;
-    ctx.textAlign='center'; ctx.fillText('reionization',(x1+x2)/2,T+14);
-    if(tRec!=null){ const xr=cl(X(tRec));
-      if(xr>L+2&&xr<R-2){ ctx.textAlign='left'; ctx.fillText('recombination',xr+5,T+14); } }
+    /* the top row is first come first served, and reionization has the floor */
+    const taken=[];
+    const place=(txt,x,align,row)=>{
+      const w=ctx.measureText(txt).width;
+      const a=align==='center'?x-w/2:x, b=a+w;
+      if(row===0){ if(taken.some(t=>b>t[0]-6&&a<t[1]+6)) return; taken.push([a,b]); }
+      if(b<L||a>R) return;
+      ctx.textAlign=align; ctx.fillText(txt,x,T+14+row*14);
+    };
+    place('reionization',(x1+x2)/2,'center',0);
+    if(tRec!=null){ const xr=cl(X(tRec)); if(xr>L+2&&xr<R-2) place('recombination',xr+5,'left',0); }
+    /* a row down, so it cannot run into either of those */
+    if(dx1!=null&&dx2>dx1+1) place('cosmic dawn',(dx1+dx2)/2,'center',1);
 
     const y=B-16;
     if(x1-L>44){ arrowTo(ctx,x1-6,x1-32,y);
@@ -551,6 +636,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     }
     ms.forEach(md=>{ if(md.ap==null||md.tp==null) return; ctx.fillStyle=md.color; ctx.strokeStyle=css('--bg'); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(X(md.tp),Y(md.ap),5.5,0,2*Math.PI); ctx.fill(); ctx.stroke(); });
     ctx.restore();
+    if(logX && ev.checked) markers(ctx,m,pw,ph,X,Y,ms[0].r.pts,s.Om,Or);
     const r=ms[0].r;
     function mark(t,color,label,side){ if(t==null||t<x0||t>x1) return;
       if(logX && t-tBang<=0) return;       /* the origin itself is off a log axis */
