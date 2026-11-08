@@ -9,18 +9,21 @@
   --bg:#ffffff; --panel:#f5f6fa; --ink:#1b2033; --muted:#5d6478; --grid:#e3e6ef; --axis:#8a92a8;
   --ours:#d99a00; --matter:#d23c5f; --empty:#6f8aa8; --you:#2563eb; --band:#eef1fb; --accent:#2563eb;
   --ok:#137a4b; --warn:#b4231b; --rad:#e76f51; --mat:#2a9d8f; --vac:#6d5bd0; --cur:#0f766e; --curv:#b8bfcc;
+  --gasI:rgba(217,154,0,.16); --gasN:rgba(70,100,150,.13);
 }
 @media (prefers-color-scheme: dark){
   :root:not([data-theme="light"]){
     --bg:#0b1020; --panel:#141b33; --ink:#e8ecf5; --muted:#9aa3ba; --grid:#222b49; --axis:#6c7593;
     --ours:#ffd166; --matter:#ef476f; --empty:#9fb3c8; --you:#5eb0ff; --band:#1a2342; --accent:#5eb0ff;
     --ok:#4ade80; --warn:#f87171; --rad:#f4a261; --mat:#4fd1c5; --vac:#a78bfa; --cur:#5eead4; --curv:#5b6580;
+    --gasI:rgba(255,209,102,.15); --gasN:rgba(120,155,225,.15);
   }
 }
 :root[data-theme="dark"]{
   --bg:#0b1020; --panel:#141b33; --ink:#e8ecf5; --muted:#9aa3ba; --grid:#222b49; --axis:#6c7593;
   --ours:#ffd166; --matter:#ef476f; --empty:#9fb3c8; --you:#5eb0ff; --band:#1a2342; --accent:#5eb0ff;
   --ok:#4ade80; --warn:#f87171; --rad:#f4a261; --mat:#4fd1c5; --vac:#a78bfa; --cur:#5eead4; --curv:#5b6580;
+    --gasI:rgba(255,209,102,.15); --gasN:rgba(120,155,225,.15);
 }
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
@@ -192,6 +195,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       <div class="range">
         <label><input type="checkbox" id="logY"> log scale on a</label>
         <label><input type="checkbox" id="logX"> log scale on time (measured from the Big Bang)</label>
+        <label><input type="checkbox" id="events"> key events in cosmic history</label>
       </div>
 
   <div class="comp-ctrl">
@@ -309,6 +313,80 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     let k=pts.findIndex(p=>p[0]>=0); if(k<0) k=pts.length-1;
     for(let i=k;i>0;i--){ const p=pts[i-1],q=pts[i]; if((p[1]-a)*(q[1]-a)<=0 && p[1]!==q[1]) return p[0]+(q[0]-p[0])*(a-p[1])/(q[1]-p[1]); }
     return null;
+  }
+
+  /* ---- key events in cosmic history -------------------------------------
+     Hydrogen is ionized plasma until recombination, neutral through the dark
+     ages, then ionized again by starlight. Reionization is well underway by
+     z ~ 15 (CMB optical depth), its midpoint is z = 7.7 +/- 0.7 (Planck 2018)
+     and it is complete by z ~ 5.6 (Lyman-alpha forest). Every boundary is a
+     fixed redshift, so the time it lands at is read off whichever universe is
+     on the plot. */
+  const Z_REC=1100, Z_REION_START=15, Z_REION_END=5.6;
+
+  /* wrap, then tighten to the narrowest width that still needs the same number
+     of lines, so a label never ends on a one-word orphan line */
+  function wrapLines(ctx,text,maxw){
+    const words=text.split(' ');
+    const lay=w=>{ const out=[]; let line='';
+      words.forEach(x=>{ const t=line?line+' '+x:x;
+        if(line && ctx.measureText(t).width>w){ out.push(line); line=x; } else line=t; });
+      if(line) out.push(line); return out; };
+    let best=lay(maxw); const n=best.length;
+    let lo=12, hi=maxw;
+    while(hi-lo>2){ const mid=(lo+hi)/2, t=lay(mid);
+      if(t.length<=n){ best=t; hi=mid; } else lo=mid; }
+    return best;
+  }
+  function arrowTo(ctx,xa,xb,y){
+    ctx.beginPath(); ctx.moveTo(xa,y); ctx.lineTo(xb,y); ctx.stroke();
+    const d=xb>xa?1:-1;
+    ctx.beginPath(); ctx.moveTo(xb,y); ctx.lineTo(xb-d*5,y-3.5); ctx.lineTo(xb-d*5,y+3.5); ctx.closePath(); ctx.fill();
+  }
+  /* text block growing upwards from y, right- or left-aligned on x */
+  function labelBlock(ctx,text,x,y,maxw,align){
+    if(maxw<46) return;
+    const lines=wrapLines(ctx,text,maxw);
+    ctx.textAlign=align;
+    for(let i=0;i<lines.length;i++) ctx.fillText(lines[i],x,y-13*(lines.length-1-i));
+  }
+
+  function epochs(ctx,m,pw,ph,X,pts){
+    const tOf=z=>timeOfA(pts,1/(1+z));
+    const t1=tOf(Z_REION_START), t2=tOf(Z_REION_END), tRec=tOf(Z_REC);
+    if(t1==null||t2==null) return;
+    const L=m.l,R=m.l+pw,T=m.t,B=m.t+ph, cl=x=>Math.max(L,Math.min(R,x));
+    const x1=cl(X(t1)), x2=cl(X(t2));
+    const ion=css('--gasI'), neu=css('--gasN');
+
+    ctx.save(); ctx.beginPath(); ctx.rect(L,T,pw,ph); ctx.clip();
+    /* ionized plasma, before recombination */
+    if(tRec!=null){ const xr=cl(X(tRec));
+      if(xr>L){ ctx.fillStyle=ion; ctx.fillRect(L,T,xr-L,ph); }
+      /* the dark ages: neutral hydrogen */
+      if(x1>xr){ ctx.fillStyle=neu; ctx.fillRect(xr,T,x1-xr,ph); }
+    } else if(x1>L){ ctx.fillStyle=neu; ctx.fillRect(L,T,x1-L,ph); }
+    /* reionization itself, fading from neutral to ionized across the band */
+    if(x2>x1){ const g=ctx.createLinearGradient(x1,0,x2,0);
+      g.addColorStop(0,neu); g.addColorStop(1,ion);
+      ctx.fillStyle=g; ctx.fillRect(x1,T,x2-x1,ph); }
+    /* ionized again, by starlight */
+    if(R>x2){ ctx.fillStyle=ion; ctx.fillRect(x2,T,R-x2,ph); }
+
+    ctx.font='11px system-ui, sans-serif'; ctx.fillStyle=css('--muted');
+    ctx.strokeStyle=css('--muted'); ctx.lineWidth=1.2;
+    ctx.textAlign='center'; ctx.fillText('reionization',(x1+x2)/2,T+14);
+    if(tRec!=null){ const xr=cl(X(tRec));
+      if(xr>L+2&&xr<R-2){ ctx.textAlign='left'; ctx.fillText('recombination',xr+5,T+14); } }
+
+    const y=B-16;
+    if(x1-L>44){ arrowTo(ctx,x1-6,x1-32,y);
+      labelBlock(ctx,'neutral H still abundant',x1-38,y+4,x1-38-L-4,'right'); }
+    if(R-x2>44){ arrowTo(ctx,x2+6,x2+32,y);
+      /* the stretch after reionization is a sixth of the plot at most, so these
+         words sit above the arrow and reach back left across the band */
+      labelBlock(ctx,'H clouds almost completely ionized by stellar light',R-4,y-14,Math.min(250,R-L-8),'right'); }
+    ctx.restore();
   }
 
   function draw(){
@@ -450,6 +528,10 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     ctx.fillText('size of the universe, a (today = 1'+(logY?', log scale':'')+')',0,0); ctx.restore();
     ctx.strokeStyle=css('--axis'); ctx.setLineDash([4,4]); ctx.beginPath(); ctx.moveTo(X(0),m.t); ctx.lineTo(X(0),m.t+ph); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle=css('--muted'); ctx.textAlign='left'; ctx.fillText('today',X(0)+4,m.t+12);
+
+    const ev=$('events');
+    ev.disabled=!logX; ev.parentElement.style.opacity = logX ? 1 : .45;
+    if(logX && ev.checked) epochs(ctx,m,pw,ph,X,ms[0].r.pts);
 
     ctx.save(); ctx.beginPath(); ctx.rect(m.l,m.t,pw,ph); ctx.clip();
     ms.slice().reverse().forEach(md=>{
@@ -689,7 +771,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   $('thrBtn').addEventListener('click',()=>{const Om=+$('om').value; const T=Math.ceil(thresholdOL(Om,OrOf(+$('h0').value))/0.0005)*0.0005; $('ol').value=T.toFixed(4); $('past').value='60'; draw();});
   document.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{const [mm,l]=b.dataset.p.split(',');$('h0').value=70;$('om').value=mm;$('ol').value=l;if(b.dataset.past)$('past').value=b.dataset.past;if(b.dataset.fut)$('fut').value=b.dataset.fut;draw();}));
 
-  ['h0','om','ol','past','fut','tEmpty','tMatter','tOurs','tRad','logX','logY'].forEach(id=>$(id).addEventListener('input',draw));
+  ['h0','om','ol','past','fut','tEmpty','tMatter','tOurs','tRad','logX','logY','events'].forEach(id=>$(id).addEventListener('input',draw));
   /* Typing a value drives the slider, which clamps it to the allowed range.
      The box is only rewritten when it is not the one being typed in. */
   [['h0o','h0'],['omo','om'],['olo','ol']].forEach(([numId,rangeId])=>{
