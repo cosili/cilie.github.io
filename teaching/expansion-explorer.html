@@ -170,7 +170,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         <input id="ol" type="range" min="-1" max="5" step="0.01" value="0.7" aria-label="ΩΛ (vacuum energy)">
         <small id="geo"></small>
       </div>
-      <div class="toggles" style="margin-bottom:12px"><label><input type="checkbox" id="tRad"> Include radiation from the CMB <small id="rado" style="color:var(--muted)"></small></label></div>
+      <div class="toggles" style="margin-bottom:12px"><label><input type="checkbox" id="tRad"> Include radiation (Ω from CMB) <small id="rado" style="color:var(--muted)"></small></label></div>
       <div><strong style="font-size:.9rem">Presets (assuming H₀ = 70)</strong></div>
       <div class="presets">
         <button type="button" data-p="0.3,0.7" data-past="20" data-fut="10">Our universe</button>
@@ -224,7 +224,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       </div>
   </div>
 
-  <p class="note">Radiation (photons and neutrinos) dominated only for the first ~50,000 years, before z ≈ 3400; to see it, tick “Include radiation from the CMB” and type a large redshift. Ω values are fractions of the critical density at that moment. Flat universes have a total of exactly 1. For curved ones the total misses 1, and the gap is written Ωk = 1 − (total): positive for open universes (total below 1), negative for closed ones (total above 1). Ωk is not a substance, just bookkeeping for the curvature.</p>
+  <p class="note">Radiation (photons and neutrinos) dominated only for the first ~50,000 years, before z ≈ 3400; to see it, tick “Include radiation (Ω from CMB)” and type a large redshift. Ω values are fractions of the critical density at that moment. Flat universes have a total of exactly 1. For curved ones the total misses 1, and the gap is written Ωk = 1 − (total): positive for open universes (total below 1), negative for closed ones (total above 1). Ωk is not a substance, just bookkeeping for the curvature.</p>
 
   <details>
     <summary>How this works</summary>
@@ -596,7 +596,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     const gy=v=>String(+v.toFixed(2));
     $('pastLab').textContent = s.past===0 ? 'today' : gy(s.past)+' billion years ago';
     $('futLab').textContent = s.fut===0 ? 'today' : gy(s.fut)+' billion years from now';
-    $('rado').textContent='(Ω_rad = '+(4.15e-5/Math.pow(s.H0/100,2)).toExponential(1)+')';
+    $('rado').textContent='Ω_rad = '+(4.15e-5/Math.pow(s.H0/100,2)).toExponential(1);
     const Ok=1-s.Om-s.OL-Or;
     $('geo').textContent='Ωm + ΩΛ = '+(s.Om+s.OL).toFixed(2)+(Math.abs(Ok)<0.005?' (flat)':(Ok>0?' (open)':' (closed)'));
 
