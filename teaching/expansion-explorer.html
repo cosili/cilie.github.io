@@ -153,7 +153,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   <p class="sitelink"><a href="./">← Teaching resources</a> · <a href="../">cosminilie.com</a></p>
 <button class="themebtn" id="themeBtn" type="button" aria-label="Toggle light or dark theme">Light / dark</button>
   <h1>Expansion Explorer</h1>
-  <p class="lead">How does the size of the universe, a(t), change over time? Choose today's expansion rate H₀ and how much matter (Ωm) and vacuum energy (ΩΛ) the universe holds. Every curve passes through today at a = 1 with slope ȧ = H₀; what the universe contains decides how its scale factor evolves. Below the plot, the <strong>moment slider</strong> (or a click on the plot) picks a moment in time; the pie chart on the plot shows what your universe is made of at that moment. The tick boxes under the plot are worth finding: they switch the axes to log scales, and on a log time axis <strong>key events in cosmic history</strong> marks when hydrogen was ionized, neutral, and ionized again.</p>
+  <p class="lead">How does the size of the universe, a(t), change over time? Choose today's expansion rate H₀ and how much matter (Ωm) and vacuum energy (ΩΛ) the universe holds. Every curve passes through today at a = 1 with slope ȧ = H₀; what the universe contains decides how its scale factor evolves. Below the plot, the <strong>moment slider</strong> (or a click on the plot) picks a moment in time; the pie chart on the plot shows what your universe is made of at that moment. The tick boxes under the plot are worth finding: they switch the axes to log scales, and add the <strong>most distant galaxy and SNe Ia</strong> anyone has measured. On a log time axis our own universe also shades when its hydrogen was ionized, neutral, and ionized again.</p>
 
   <div class="grid">
     <div class="panel">
@@ -212,8 +212,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       <div class="range">
         <label><input type="checkbox" id="logY"> log scale on a</label>
         <label><input type="checkbox" id="logX"> log scale on time (measured from the Big Bang)</label>
-        <label><input type="checkbox" id="events"> key events in cosmic history</label>
-        <small id="evoff" hidden>Our universe only — Ωm = 0.30, ΩΛ = 0.70, H₀ between 65 and 75: these are its measurements.</small>
+        <label><input type="checkbox" id="events"> most distant galaxy and SNe Ia</label>
+        <small id="evoff" hidden>Cosmic history shading shows for our universe only — Ωm = 0.30, ΩΛ = 0.70, H₀ between 65 and 75.</small>
       </div>
 
   <div class="comp-ctrl">
@@ -445,22 +445,10 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
 
   /* dots on your own curve, with their captions stacked in the open wedge
      under it. Leaders are drawn first so a box hides any that passes behind. */
-  function markers(ctx,m,pw,ph,X,Y,pts,Om,Or){
+  function markers(ctx,m,pw,ph,X,Y,pts){
     const L=m.l,R=m.l+pw,T=m.t,B=m.t+ph;
     ctx.save(); ctx.beginPath(); ctx.rect(L,T,pw,ph); ctx.clip();
     ctx.font='11px system-ui, sans-serif';
-
-    /* equality is not a fixed redshift: it moves with the matter/radiation mix */
-    if(Or>0 && Om>0){
-      const aEq=Or/Om, tEq=timeOfA(pts,aEq);
-      if(tEq!=null){ const px=X(tEq), py=Y(aEq);
-        if(px>L+4&&px<R-4&&py>T&&py<B){ evDot(ctx,px,py,css('--mat'));
-          ctx.fillStyle=css('--muted');
-          const lab='matter\u2013radiation equality', lw=ctx.measureText(lab).width;
-          const left = px-9-lw > L+2;   /* otherwise it would run off the y axis */
-          ctx.textAlign = left?'right':'left';
-          ctx.fillText(lab,px+(left?-9:9),py-7); } }
-    }
 
     const live=[];
     EVENTS.forEach(e=>{ const t=timeOfA(pts,1/(1+e.z)); if(t==null) return;
@@ -748,22 +736,16 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     {const tx=X(0), tw=ctx.measureText('today').width, right=tx+4+tw<=m.l+pw;
      ctx.textAlign=right?'left':'right'; ctx.fillText('today',tx+(right?4:-4),m.t+12);}
 
-    const ev=$('events');
-    /* Every one of these is a measurement of our universe: the epochs of its
-       hydrogen, and objects observed in it. Putting them on a different
-       universe would be quoting our observations as if they were its own. */
-    /* H0 counts too. The redshifts themselves do not depend on it, but the
-       universe does: at H0 = 40 this one is 23.5 Gyr old with Or four times
-       larger and equality pushed to z = 1156, inside recombination. The band
-       is wide enough to hold the measured values on either side of the Hubble
-       tension, and no wider. */
+    /* The shadings are our universe's own history -- the epochs of its
+       hydrogen -- so they come with it rather than with a tick box, on a log
+       time axis where the early universe is wide enough to show them. H0
+       counts as well as the Omegas: at H0 = 40 the same mix is 23.5 Gyr old
+       with Or four times larger. The band holds the measured values on either
+       side of the Hubble tension and no more. */
     const isOurs = Math.abs(s.Om-0.3)<0.005 && Math.abs(s.OL-0.7)<0.005
                 && s.H0>=65 && s.H0<=75;
-    ev.disabled=!(logX && isOurs);
-    if(ev.disabled) ev.checked=false;
-    ev.parentElement.style.opacity = ev.disabled ? .45 : 1;
+    if(logX && isOurs) epochs(ctx,m,pw,ph,X,ms[0].r.pts);
     $('evoff').hidden = !(logX && !isOurs);
-    if(!ev.disabled && ev.checked) epochs(ctx,m,pw,ph,X,ms[0].r.pts);
 
     zaxis(ctx,m,pw,X,ms[0].r.pts,ms.length>1);
 
@@ -793,7 +775,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       ctx.fillStyle=css('--accent'); ctx.strokeStyle=css('--bg'); ctx.lineWidth=2.5;
       ctx.beginPath(); ctx.arc(X(md.tp),Y(md.ap),6,0,2*Math.PI); ctx.fill(); ctx.stroke(); });
     ctx.restore();
-    if(!ev.disabled && ev.checked) markers(ctx,m,pw,ph,X,Y,ms[0].r.pts,s.Om,Or);
+    /* the objects are observed redshifts, so they go on any universe, either axis */
+    if($('events').checked) markers(ctx,m,pw,ph,X,Y,ms[0].r.pts);
     const r=ms[0].r;
     function mark(t,color,label,side){ if(t==null||t<x0||t>x1) return;
       if(logX && t-tBang<=0) return;       /* the origin itself is off a log axis */
