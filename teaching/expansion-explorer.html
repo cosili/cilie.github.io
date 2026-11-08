@@ -51,8 +51,9 @@ h1{font:600 1.7rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
 .ctrl label .numwrap{display:inline-flex;align-items:baseline;gap:5px}
 .ctrl label .unit{font-weight:700;color:var(--accent)}
 .ctrl small{color:var(--muted);display:block;margin-top:2px}
-#refoff,#pastoff{display:block;color:var(--muted);font-size:.8rem;margin:2px 0 4px}
-#refoff[hidden],#pastoff[hidden]{display:none}
+#refoff,#pastoff,#evoff{display:block;color:var(--muted);font-size:.8rem;margin:2px 0 4px}
+#refoff[hidden],#pastoff[hidden],#evoff[hidden]{display:none}
+#evoff{flex-basis:100%}
 input[type=range]{width:100%;accent-color:var(--accent)}
 /* "Show from X to Y" with both sliders and both readouts is far wider than the
    column, so it is a grid of two rows: label, slider, readout. */
@@ -212,6 +213,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         <label><input type="checkbox" id="logY"> log scale on a</label>
         <label><input type="checkbox" id="logX"> log scale on time (measured from the Big Bang)</label>
         <label><input type="checkbox" id="events"> key events in cosmic history</label>
+        <small id="evoff" hidden>Our universe only, Ωm = 0.30 and ΩΛ = 0.70: these are its measurements.</small>
       </div>
 
   <div class="comp-ctrl">
@@ -616,6 +618,9 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     const logY=$('logY').checked;
     const lxBox=$('logX');
     lxBox.disabled=(tBang==null);   /* no Big Bang, so no age to take a log of */
+    /* and untick it, or it stays checked while greyed out and switches itself
+       back on the moment a Big Bang reappears */
+    if(lxBox.disabled) lxBox.checked=false;
     lxBox.parentElement.style.opacity = lxBox.disabled ? .45 : 1;
     const logX = lxBox.checked && !lxBox.disabled;
 
@@ -744,8 +749,15 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
      ctx.textAlign=right?'left':'right'; ctx.fillText('today',tx+(right?4:-4),m.t+12);}
 
     const ev=$('events');
-    ev.disabled=!logX; ev.parentElement.style.opacity = logX ? 1 : .45;
-    if(logX && ev.checked) epochs(ctx,m,pw,ph,X,ms[0].r.pts);
+    /* Every one of these is a measurement of our universe: the epochs of its
+       hydrogen, and objects observed in it. Putting them on a different
+       universe would be quoting our observations as if they were its own. */
+    const isOurs = Math.abs(s.Om-0.3)<0.005 && Math.abs(s.OL-0.7)<0.005;
+    ev.disabled=!(logX && isOurs);
+    if(ev.disabled) ev.checked=false;
+    ev.parentElement.style.opacity = ev.disabled ? .45 : 1;
+    $('evoff').hidden = !(logX && !isOurs);
+    if(!ev.disabled && ev.checked) epochs(ctx,m,pw,ph,X,ms[0].r.pts);
 
     zaxis(ctx,m,pw,X,ms[0].r.pts,ms.length>1);
 
@@ -775,7 +787,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       ctx.fillStyle=css('--accent'); ctx.strokeStyle=css('--bg'); ctx.lineWidth=2.5;
       ctx.beginPath(); ctx.arc(X(md.tp),Y(md.ap),6,0,2*Math.PI); ctx.fill(); ctx.stroke(); });
     ctx.restore();
-    if(logX && ev.checked) markers(ctx,m,pw,ph,X,Y,ms[0].r.pts,s.Om,Or);
+    if(!ev.disabled && ev.checked) markers(ctx,m,pw,ph,X,Y,ms[0].r.pts,s.Om,Or);
     const r=ms[0].r;
     function mark(t,color,label,side){ if(t==null||t<x0||t>x1) return;
       if(logX && t-tBang<=0) return;       /* the origin itself is off a log axis */
