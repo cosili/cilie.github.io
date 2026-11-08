@@ -956,9 +956,16 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       /* in log mode the slider already reads out the age, so don't repeat it */
       let since='';
       if(md.r.bang!=null && !(geom&&geom.logX)) since=' ('+ageText(md.tp-md.r.bang)+' after its Big Bang)';
-      const dd=distances(md.Om,md.OL,md.Or,H0,a);
+      /* A redshift and a distance are statements about light that reaches us
+         now, so they belong to moments in our past. Testing a < 1 is not
+         enough: a universe that recollapses passes back through a = 0.814 on
+         the way down, and the integral from there to 1 would describe the
+         galaxy we saw on the way up, under a date billions of years ahead. */
+      const past = md.tp<0;
+      const dd = past ? distances(md.Om,md.OL,md.Or,H0,a) : null;
       const dstr=dd?' · D<sub>L</sub> = '+dist(dd.DL)+' · D<sub>A</sub> = '+dist(dd.DA):'';
-      const when=(md.tp===0?'today':(Math.abs(md.tp).toFixed(2)+' billion years '+(md.tp<0?'ago':'from now')))+since+' · a = '+(a<0.01?a.toExponential(2):a.toFixed(3))+(z>1e-6?' · z = '+(z<10?z.toFixed(2):z.toFixed(0)):'')+dstr;
+      const zstr=(past&&z>1e-6)?' · z = '+(z<10?z.toFixed(2):z.toFixed(0)):'';
+      const when=(md.tp===0?'today':(Math.abs(md.tp).toFixed(2)+' billion years '+(md.tp<0?'ago':'from now')))+since+' · a = '+(a<0.01?a.toExponential(2):a.toFixed(3))+zstr+dstr;
       const parts=[[or,cr],[om,cm],[Math.max(ol,0),cvv],[Math.max(ok,0),ck]];
       const sh=shares([or,om,ol,ok]);
       const rows='<tr><td><span class="dot" style="background:'+cr+'"></span></td><td>Radiation</td><td>'+sh[0]+'</td></tr>'
