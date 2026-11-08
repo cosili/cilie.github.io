@@ -191,7 +191,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       <div class="ctrl" style="margin:10px 0 4px">
         <label for="tslider">Moment slider <output id="tsliderO"></output></label>
         <input id="tslider" type="range" min="-20" max="10" step="0.01" value="0">
-        <small>Picks a time for the pie chart. You can also click and drag on the plot; a vertical line and a dot on each curve mark the moment.</small>
+        <small>Picks a time for the pie chart. You can also click and drag on the plot; a dot on each curve, in this slider's colour, marks the moment.</small>
       </div>
       <div class="range">
         <span>Show from</span>
@@ -669,22 +669,18 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       if(pick.mode==='time'){ md.tp=pick.t; md.ap=interpA(md.r.pts,pick.t); }
       else { md.ap=1/(1+pick.z); md.tp=timeOfA(md.r.pts,md.ap); if(md.tp==null) md.ap=null; }
     });
-    /* The line marks the moment the card is describing. Picking a time puts
-       every universe at the same instant, so it is solid. Picking a redshift
-       does not: each one reaches that size at its own time, so the line
-       follows yours and goes dashed to say that the others are elsewhere. */
+    /* No rule down the plot: it crossed the labels and the overlay. The moment
+       is marked on each curve instead, in the slider thumb's own colour, so
+       the dot and the thumb read as the same control. */
     const tLine = pick.mode==='time' ? pick.t : ms[0].tp;
-    if(tLine!=null){
-      ctx.save(); ctx.strokeStyle=css('--cur'); ctx.lineWidth=1.5;
-      if(pick.mode!=='time') ctx.setLineDash([5,4]);
-      ctx.beginPath(); ctx.moveTo(X(tLine),m.t); ctx.lineTo(X(tLine),m.t+ph); ctx.stroke(); ctx.restore();
-      /* and the thumb follows it, so the two controls never disagree */
-      if(pick.mode!=='time'){
-        if(logX){ const tau=tLine-tBang; if(tau>0) ts.value=Math.log10(tau); }
-        else ts.value=Math.max(x0,Math.min(x1,tLine));
-      }
+    if(tLine!=null && pick.mode!=='time'){
+      /* the thumb follows a redshift pick too, so the two never disagree */
+      if(logX){ const tau=tLine-tBang; if(tau>0) ts.value=Math.log10(tau); }
+      else ts.value=Math.max(x0,Math.min(x1,tLine));
     }
-    ms.forEach(md=>{ if(md.ap==null||md.tp==null) return; ctx.fillStyle=md.color; ctx.strokeStyle=css('--bg'); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(X(md.tp),Y(md.ap),5.5,0,2*Math.PI); ctx.fill(); ctx.stroke(); });
+    ms.forEach(md=>{ if(md.ap==null||md.tp==null) return;
+      ctx.fillStyle=css('--accent'); ctx.strokeStyle=css('--bg'); ctx.lineWidth=2.5;
+      ctx.beginPath(); ctx.arc(X(md.tp),Y(md.ap),6,0,2*Math.PI); ctx.fill(); ctx.stroke(); });
     ctx.restore();
     if(logX && ev.checked) markers(ctx,m,pw,ph,X,Y,ms[0].r.pts,s.Om,Or);
     const r=ms[0].r;
