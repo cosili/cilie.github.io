@@ -74,7 +74,7 @@ button:hover,button:focus-visible{border-color:var(--accent);color:var(--accent)
 .toggles label{display:flex;gap:8px;align-items:center;font-size:.92rem;margin:4px 0}
 .sw{display:inline-block;width:22px;height:3px;border-radius:2px;vertical-align:middle}
 .plotbox{position:relative}
-canvas{width:100%;height:440px;display:block;background:var(--bg);border-radius:12px;border:1px solid var(--grid)}
+canvas{width:100%;height:520px;display:block;background:var(--bg);border-radius:12px;border:1px solid var(--grid)}
 .range{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:8px;font-size:.9rem;color:var(--muted)}
 .range select{font:inherit;background:var(--bg);color:var(--ink);border:1px solid var(--axis);border-radius:6px;padding:2px 6px}
 .facts{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:14px}
@@ -467,15 +467,45 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       live.push({e:e,px:px,py:py}); });
 
     if(live.length && pw>=340){
-      const boxW=Math.min(172,pw-24), bx=R-6-boxW;
-      const blocks=live.map(o=>[o.e.name].concat(wrapLines(ctx,o.e.text,boxW-12)));
-      const hs=blocks.map(b=>b.length*13+9);
-      const total=hs.reduce((u,v)=>u+v,0)+8*(live.length-1);
-      const tops=[]; let yy=Math.max(T+8,B-58-total);
-      hs.forEach(h=>{ tops.push(yy); yy+=h+8; });
+      /* The captions sit in a column on the right, and the curve runs through
+         that strip at whatever height the window happens to put it. Measure
+         where, and drop the column into the clear band below the curve, or
+         above it if below will not hold.
+
+         A wider box wraps the descriptions into fewer lines, so it is shorter
+         and more likely to fit -- but its strip reaches further left, where the
+         curve is lower, which costs room. Neither wins outright, so try the
+         widths in turn and take the first that lands. Only if none of them do
+         are the descriptions dropped for the names alone, which always fits. */
+      const band=w=>{ const bx=R-6-w; let lo=Infinity,hi=-Infinity;
+        pts.forEach(p=>{ const px=X(p[0]); if(px<bx-6||px>bx+w+6) return;
+          const py=Y(p[1]); if(py<lo) lo=py; if(py>hi) hi=py; });
+        return isFinite(lo)?[lo,hi]:[T,T]; };
+      const lay=(w,full)=>{
+        const blocks=live.map(o=> full ? [o.e.name].concat(wrapLines(ctx,o.e.text,w-12)) : [o.e.name]);
+        const hs=blocks.map(b=>b.length*13+9);
+        return {blocks:blocks, hs:hs, total:hs.reduce((u,v)=>u+v,0)+8*(live.length-1)};
+      };
+      const slot=(t,lo,hi)=>{ const below=hi+10, above=lo-10-t;
+        if(below+t<=B-58) return below;          /* clear of the arrows at the foot */
+        if(above>=T+34) return above;            /* clear of the two epoch label rows */
+        return null; };
+
+      let boxW=null, L=null, by=null;
+      [[172,true],[216,true],[260,true],[172,false]].forEach(([w,full])=>{
+        if(by!==null || w>pw-24) return;
+        const b=band(w), cand=lay(w,full), y=slot(cand.total,b[0],b[1]);
+        if(y!==null){ boxW=w; L=cand; by=y; }
+      });
+      if(by===null){ boxW=Math.min(172,pw-24); L=lay(boxW,false);
+        const b=band(boxW); by=Math.max(T+34,Math.min(b[1]+10,B-58-L.total)); }
+      const bx=R-6-boxW;
+
+      const tops=[]; let yy=by;
+      L.hs.forEach(h=>{ tops.push(yy); yy+=h+8; });
       ctx.strokeStyle=css('--axis'); ctx.lineWidth=1;
       live.forEach((o,i)=>{ ctx.beginPath(); ctx.moveTo(o.px,o.py); ctx.lineTo(bx+12,tops[i]); ctx.stroke(); });
-      live.forEach((o,i)=>{ evDot(ctx,o.px,o.py,css('--you')); evBox(ctx,blocks[i],bx,tops[i],boxW); });
+      live.forEach((o,i)=>{ evDot(ctx,o.px,o.py,css('--you')); evBox(ctx,L.blocks[i],bx,tops[i],boxW); });
     } else {
       /* too narrow for captions: name the dots instead */
       live.forEach(o=>{ evDot(ctx,o.px,o.py,css('--you'));
