@@ -760,11 +760,20 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     const tot=parts.reduce((u,p)=>u+p[0],0); const R=46,c=50;
     if(tot<=0) return '<svg width="100" height="100" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="'+css('--axis')+'" stroke-dasharray="4 4"/><text x="50" y="54" text-anchor="middle" font-size="11" fill="'+css('--muted')+'">nothing</text></svg>';
     let ang=-Math.PI/2, out='';
+    const disc=col=>'<svg width="100" height="100" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="'+col+'"/></svg>';
     const nz=parts.filter(p=>p[0]/tot>1e-9);
-    if(nz.length===1) return '<svg width="100" height="100" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="'+nz[0][1]+'"/></svg>';
+    if(nz.length===1) return disc(nz[0][1]);
+    /* One ingredient can be all but a rounding error of the whole -- matter is
+       99.998% of it a few tens of millions of years in. Then the arc starts and
+       ends on the same point, and SVG drops an arc whose endpoints coincide, so
+       the slice silently disappears and the pie comes out blank. Everything
+       below this share is thinner than half a pixel of arc anyway, so draw the
+       dominant ingredient as a plain disc instead. */
+    const dom=parts.reduce((b,q)=>q[0]>b[0]?q:b,parts[0]);
+    if(dom[0]/tot>1-0.002) return disc(dom[1]);
     parts.forEach(([v,col])=>{ const fr=v/tot; if(fr<=0) return; const a2=ang+fr*2*Math.PI;
       const xA=c+R*Math.cos(ang),yA=c+R*Math.sin(ang),xB=c+R*Math.cos(a2),yB=c+R*Math.sin(a2);
-      out+='<path d="M'+c+','+c+' L'+xA.toFixed(2)+','+yA.toFixed(2)+' A'+R+','+R+' 0 '+(fr>0.5?1:0)+' 1 '+xB.toFixed(2)+','+yB.toFixed(2)+' Z" fill="'+col+'"/>'; ang=a2; });
+      out+='<path d="M'+c+','+c+' L'+xA.toFixed(3)+','+yA.toFixed(3)+' A'+R+','+R+' 0 '+(fr>0.5?1:0)+' 1 '+xB.toFixed(3)+','+yB.toFixed(3)+' Z" fill="'+col+'"/>'; ang=a2; });
     return '<svg width="100" height="100" viewBox="0 0 100 100" aria-hidden="true">'+out+'</svg>';
   }
   function cards(ms,H0){
