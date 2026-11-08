@@ -548,7 +548,13 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
                    : (t=>m.l+(t-x0)/(x1-x0)*pw);
     const Y = logY ? (a=>a>0 ? m.t+(1-(Math.log10(a)-K0)/(K1-K0))*ph : -OFF)
                    : (a=>m.t+(1-(a-y0)/(y1-y0))*ph);
-    geom={m,pw,ph,x0,x1,logX,logY,L0,L1,tBang};
+    /* On a linear axis the whole 30-billion-year window is ~650 pixels, so one
+       pixel is tens of millions of years and the pointer cannot land close to
+       the Big Bang: one step too far and there is no universe to show. Hold
+       every pick at the first moment your universe exists instead. */
+    let tFirst=null;
+    for(let i=0;i<ms[0].r.pts.length;i++){ if(ms[0].r.pts[i][1]>0){ tFirst=ms[0].r.pts[i][0]; break; } }
+    geom={m,pw,ph,x0,x1,logX,logY,L0,L1,tBang,tFirst};
 
     const ts=$('tslider');
     if(logX){
@@ -838,6 +844,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     } else {
       t=Math.max(x0,Math.min(x1,x0+(px-m.l)/pw*(x1-x0)));
       if(Math.abs(t)<(x1-x0)*0.006) t=0;   /* snap to today */
+      if(geom.tFirst!=null && t<geom.tFirst) t=geom.tFirst;
     }
     pick={mode:'time',t,z:null}; draw();
   }
@@ -848,7 +855,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   $('tslider').addEventListener('input',e=>{
     const v=+e.target.value; let t;
     if(geom&&geom.logX){ t=geom.tBang+Math.pow(10,v); }   /* equal steps are equal factors */
-    else { t=v; if(Math.abs(t)<0.05) t=0; }
+    else { t=v; if(Math.abs(t)<0.05) t=0;
+      if(geom&&geom.tFirst!=null&&t<geom.tFirst) t=geom.tFirst; }
     pick={mode:'time',t,z:null}; draw(); });
   $('todayBtn').addEventListener('click',()=>{pick={mode:'time',t:0,z:null}; draw();});
   function goZ(){ const z=parseFloat($('zin').value); if(!(z>=0)) return; pick={mode:'z',t:null,z}; draw(); }
