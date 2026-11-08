@@ -153,12 +153,12 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         <small id="h0s"></small>
       </div>
       <div class="ctrl">
-        <label>Ωm (matter) <input id="omo" class="numin" type="number" min="0" max="3" step="0.001" inputmode="decimal" aria-label="Ωm value"></label>
-        <input id="om" type="range" min="0" max="3" step="0.001" value="0.3" aria-label="Ωm (matter)">
+        <label>Ωm (matter) <input id="omo" class="numin" type="number" min="0" max="3" step="0.01" inputmode="decimal" aria-label="Ωm value"></label>
+        <input id="om" type="range" min="0" max="3" step="0.01" value="0.3" aria-label="Ωm (matter)">
       </div>
       <div class="ctrl">
-        <label>ΩΛ (vacuum energy) <input id="olo" class="numin" type="number" min="-1" max="5" step="0.0001" inputmode="decimal" aria-label="ΩΛ value"></label>
-        <input id="ol" type="range" min="-1" max="5" step="0.0001" value="0.7" aria-label="ΩΛ (vacuum energy)">
+        <label>ΩΛ (vacuum energy) <input id="olo" class="numin" type="number" min="-1" max="5" step="0.01" inputmode="decimal" aria-label="ΩΛ value"></label>
+        <input id="ol" type="range" min="-1" max="5" step="0.01" value="0.7" aria-label="ΩΛ (vacuum energy)">
         <small id="geo"></small>
       </div>
       <div class="toggles" style="margin-bottom:12px"><label><input type="checkbox" id="tRad"> Include radiation from the CMB <small id="rado" style="color:var(--muted)"></small></label></div>
@@ -298,7 +298,9 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   const cv=$('cv'), ctx=cv.getContext('2d');
   function css(n){return getComputedStyle(root).getPropertyValue(n).trim();}
   /* show at most 4 decimals and no trailing zeros: 0.3, not 0.3000 */
-  function setNum(id,v){ const el=$(id); if(document.activeElement!==el) el.value=String(+(+v).toFixed(4)); }
+  /* Two decimals. No measurement of Om or OL is anywhere near a third, so a
+     box reading 0.2999 would be false precision dressed up as care. */
+  function setNum(id,v){ const el=$(id); if(document.activeElement!==el) el.value=String(+(+v).toFixed(2)); }
   function state(){return {H0:+$('h0').value,Om:+$('om').value,OL:+$('ol').value,past:+$('past').value,fut:+$('fut').value};}
   let pick={mode:'time',t:0,z:null}; let geom=null;
 
@@ -761,16 +763,16 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   function fmt(x){ const ax=Math.abs(x); if(ax===0) return '0';
     if(ax<0.001||ax>=1000) return sci(x,SIG-1);
     return x.toPrecision(SIG); }
-  /* The four shares are rounded to the same number of decimal places, taken
-     from the largest of them, so the column adds up to what it prints. Once
-     matter rounds to 1.000 the others round to 0: that is the same rounding
-     read consistently, rather than 1 - 1.6e-5 sitting beside 1.6e-5. At a
-     turnaround every share runs away, and then only exponents will do. */
+  /* All four shares are rounded together, to two decimals, which is already
+     finer than any measurement of them. So the column adds to 1.00, a universe
+     that starts flat reads flat however small Ok really is, and radiation
+     appears exactly when it grows enough to matter rather than trailing an
+     exponent at every moment. Rounding happens here and nowhere else: the pie
+     and the integration use the full values. */
   function shares(vals){
     const M=Math.max.apply(null,vals.map(Math.abs));
-    if(!(M<1000)) return vals.map(fmt);
-    const d = M>=100?1 : M>=10?2 : 3;
-    return vals.map(v=>{ const r=+v.toFixed(d); return r===0?'0':r.toFixed(d); });
+    if(!(M<1000)) return vals.map(fmt);   /* at a turnaround they all run away */
+    return vals.map(v=>{ const r=+v.toFixed(2); return r===0?'0':r.toFixed(2); });
   }
   function pie(parts){ // parts: [[value,color],...] all >=0
     const tot=parts.reduce((u,p)=>u+p[0],0); const R=46,c=50;
@@ -888,7 +890,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   function goZ(){ const z=parseFloat($('zin').value); if(!(z>=0)) return; pick={mode:'z',t:null,z}; draw(); }
   $('zBtn').addEventListener('click',goZ);
   $('zin').addEventListener('keydown',e=>{ if(e.key==='Enter') goZ(); });
-  $('thrBtn').addEventListener('click',()=>{const Om=+$('om').value; const T=Math.ceil(thresholdOL(Om,OrOf(+$('h0').value))/0.0005)*0.0005; $('ol').value=T.toFixed(4); $('past').value='60'; draw();});
+  $('thrBtn').addEventListener('click',()=>{const Om=+$('om').value; const T=Math.ceil(thresholdOL(Om,OrOf(+$('h0').value))/0.01)*0.01; $('ol').value=T.toFixed(2); $('past').value='60'; draw();});
   document.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{const [mm,l]=b.dataset.p.split(',');$('h0').value=70;$('om').value=mm;$('ol').value=l;if(b.dataset.past)$('past').value=b.dataset.past;if(b.dataset.fut)$('fut').value=b.dataset.fut;draw();}));
 
   ['h0','om','ol','past','fut','tEmpty','tMatter','tOurs','tRad','logX','logY','events'].forEach(id=>$(id).addEventListener('input',draw));
