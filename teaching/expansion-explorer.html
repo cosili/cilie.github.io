@@ -772,7 +772,14 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   function shares(vals){
     const M=Math.max.apply(null,vals.map(Math.abs));
     if(!(M<1000)) return vals.map(fmt);   /* at a turnaround they all run away */
-    return vals.map(v=>{ const r=+v.toFixed(2); return r===0?'0':r.toFixed(2); });
+    const out=vals.map(v=>{ const r=+v.toFixed(2); return r===0?'0':r.toFixed(2); });
+    /* Radiation is the one ingredient you switch on deliberately, so it keeps
+       an exponent for as long as it is too small to round to: a row reading 0
+       for the thing you just added is no use. It joins the others the moment
+       it reaches 0.01. Matter, vacuum and curvature take the plain rounding,
+       and nothing is nudged anywhere to make the column come out at 1. */
+    if(out[0]==='0' && vals[0]!==0) out[0]=sci(vals[0],1);
+    return out;
   }
   function pie(parts){ // parts: [[value,color],...] all >=0
     const tot=parts.reduce((u,p)=>u+p[0],0); const R=46,c=50;
