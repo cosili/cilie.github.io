@@ -53,8 +53,13 @@ h1{font:600 1.7rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
 .ctrl small{color:var(--muted);display:block;margin-top:2px}
 #refoff,#pastoff{display:block;color:var(--muted);font-size:.8rem;margin:2px 0 4px}
 #refoff[hidden],#pastoff[hidden]{display:none}
-#pastoff{flex-basis:100%}
 input[type=range]{width:100%;accent-color:var(--accent)}
+/* "Show from X to Y" with both sliders and both readouts is far wider than the
+   column, so it is a grid of two rows: label, slider, readout. */
+.timewin{display:grid;grid-template-columns:auto minmax(80px,1fr) auto;gap:6px 10px;
+  align-items:center;margin-top:8px;font-size:.9rem;color:var(--muted)}
+.timewin .tw{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600}
+.timewin #pastoff{grid-column:1/-1;margin:0}
 /* Line the moment slider up with the plot above it. The canvas reserves 56px
    on the left for the y axis and 16px on the right, so the data area is inset
    by that much -- but a range thumb's centre only travels from half a thumb in
@@ -194,12 +199,13 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         <input id="tslider" type="range" min="-20" max="10" step="0.01" value="0">
         <small>Picks a time for the pie chart. You can also click and drag on the plot; a dot on each curve, in this slider's colour, marks the moment.</small>
       </div>
-      <div class="range">
+      <div class="timewin">
         <span>Show from</span>
-        <select id="past"><option value="0">today</option><option>10</option><option selected>20</option><option>30</option><option>60</option></select>
-        <span id="pastUnit">billion years ago to</span>
-        <select id="fut"><option>5</option><option selected>10</option><option>20</option><option>40</option><option>100</option></select>
-        <span>billion years from now</span>
+        <input id="past" type="range" min="0" max="60" step="0.5" value="20" aria-label="How far into the past to show">
+        <span class="tw" id="pastLab"></span>
+        <span>to</span>
+        <input id="fut" type="range" min="1" max="100" step="0.5" value="10" aria-label="How far into the future to show">
+        <span class="tw" id="futLab"></span>
         <small id="pastoff" hidden>Earlier than the Big Bang, so the axis starts there.</small>
       </div>
       <div class="range">
@@ -556,7 +562,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     setNum('h0o',s.H0);
     $('h0s').textContent='= '+(s.H0/GYR).toFixed(4)+' per billion years (1/H₀ = '+(GYR/s.H0).toFixed(1)+' billion years)';
     setNum('omo',s.Om); setNum('olo',s.OL);
-    $('pastUnit').textContent = s.past===0 ? 'to' : 'billion years ago to';
+    $('pastLab').textContent = s.past===0 ? 'today' : s.past.toFixed(1)+' billion years ago';
+    $('futLab').textContent = s.fut.toFixed(1)+' billion years from now';
     $('rado').textContent='(Ω_rad = '+(4.15e-5/Math.pow(s.H0/100,2)).toExponential(1)+')';
     const Ok=1-s.Om-s.OL-Or;
     $('geo').textContent='Ωm + ΩΛ = '+(s.Om+s.OL).toFixed(2)+(Math.abs(Ok)<0.005?' (flat)':(Ok>0?' (open)':' (closed)'));
