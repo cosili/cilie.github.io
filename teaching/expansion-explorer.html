@@ -213,7 +213,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         <label><input type="checkbox" id="logY"> log scale on a</label>
         <label><input type="checkbox" id="logX"> log scale on time (measured from the Big Bang)</label>
         <label><input type="checkbox" id="events"> key events in cosmic history</label>
-        <small id="evoff" hidden>Our universe only, Ωm = 0.30 and ΩΛ = 0.70: these are its measurements.</small>
+        <small id="evoff" hidden>Our universe only — Ωm = 0.30, ΩΛ = 0.70, H₀ between 65 and 75: these are its measurements.</small>
       </div>
 
   <div class="comp-ctrl">
@@ -752,7 +752,13 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     /* Every one of these is a measurement of our universe: the epochs of its
        hydrogen, and objects observed in it. Putting them on a different
        universe would be quoting our observations as if they were its own. */
-    const isOurs = Math.abs(s.Om-0.3)<0.005 && Math.abs(s.OL-0.7)<0.005;
+    /* H0 counts too. The redshifts themselves do not depend on it, but the
+       universe does: at H0 = 40 this one is 23.5 Gyr old with Or four times
+       larger and equality pushed to z = 1156, inside recombination. The band
+       is wide enough to hold the measured values on either side of the Hubble
+       tension, and no wider. */
+    const isOurs = Math.abs(s.Om-0.3)<0.005 && Math.abs(s.OL-0.7)<0.005
+                && s.H0>=65 && s.H0<=75;
     ev.disabled=!(logX && isOurs);
     if(ev.disabled) ev.checked=false;
     ev.parentElement.style.opacity = ev.disabled ? .45 : 1;
