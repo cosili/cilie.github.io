@@ -757,20 +757,21 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     if(d>=1) return d.toFixed(0)+' Mpc';
     return (d*1000).toFixed(0)+' kpc';
   }
-  /* Every share is shown to the same number of significant figures, so no row
-     is rounded harder than the one beside it and the column reads as 1 to the
-     precision of its largest entry. Fixed decimal places did not: matter was
-     cut at two and radiation at three, so 0.99 sat next to 0.015.
-
-     The four shares add to exactly 1, so one of them being within a rounding
-     error of the whole must not print as 1.00 next to a companion of 1.6e-5:
-     that reads as two numbers that cannot both be right. Print what is left
-     over instead, which is precisely the sum of the other three rows. */
   const SIG=3;
   function fmt(x){ const ax=Math.abs(x); if(ax===0) return '0';
-    if(x>0.995&&x<1) return '1 \u2212 '+fmt(1-x);
     if(ax<0.001||ax>=1000) return sci(x,SIG-1);
     return x.toPrecision(SIG); }
+  /* The four shares are rounded to the same number of decimal places, taken
+     from the largest of them, so the column adds up to what it prints. Once
+     matter rounds to 1.000 the others round to 0: that is the same rounding
+     read consistently, rather than 1 - 1.6e-5 sitting beside 1.6e-5. At a
+     turnaround every share runs away, and then only exponents will do. */
+  function shares(vals){
+    const M=Math.max.apply(null,vals.map(Math.abs));
+    if(!(M<1000)) return vals.map(fmt);
+    const d = M>=100?1 : M>=10?2 : 3;
+    return vals.map(v=>{ const r=+v.toFixed(d); return r===0?'0':r.toFixed(d); });
+  }
   function pie(parts){ // parts: [[value,color],...] all >=0
     const tot=parts.reduce((u,p)=>u+p[0],0); const R=46,c=50;
     if(tot<=0) return '<svg width="100" height="100" viewBox="0 0 100 100" aria-hidden="true"><circle cx="50" cy="50" r="46" fill="none" stroke="'+css('--axis')+'" stroke-dasharray="4 4"/><text x="50" y="54" text-anchor="middle" font-size="11" fill="'+css('--muted')+'">nothing</text></svg>';
@@ -815,10 +816,11 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       const dstr=dd?' · D<sub>L</sub> = '+dist(dd.DL)+' · D<sub>A</sub> = '+dist(dd.DA):'';
       const when=(md.tp===0?'today':(Math.abs(md.tp).toFixed(2)+' billion years '+(md.tp<0?'ago':'from now')))+since+' · a = '+(a<0.01?a.toExponential(2):a.toFixed(3))+(z>1e-6?' · z = '+(z<10?z.toFixed(2):z.toFixed(0)):'')+dstr;
       const parts=[[or,cr],[om,cm],[Math.max(ol,0),cvv],[Math.max(ok,0),ck]];
-      const rows='<tr><td><span class="dot" style="background:'+cr+'"></span></td><td>Radiation</td><td>'+fmt(or)+'</td></tr>'
-        +'<tr><td><span class="dot" style="background:'+cm+'"></span></td><td>Matter</td><td>'+fmt(om)+'</td></tr>'
-        +'<tr><td><span class="dot" style="background:'+cvv+'"></span></td><td>Vacuum</td><td>'+fmt(ol)+'</td></tr>'
-        +'<tr><td><span class="dot" style="background:'+ck+'"></span></td><td>Curvature</td><td>'+fmt(ok)+'</td></tr>';
+      const sh=shares([or,om,ol,ok]);
+      const rows='<tr><td><span class="dot" style="background:'+cr+'"></span></td><td>Radiation</td><td>'+sh[0]+'</td></tr>'
+        +'<tr><td><span class="dot" style="background:'+cm+'"></span></td><td>Matter</td><td>'+sh[1]+'</td></tr>'
+        +'<tr><td><span class="dot" style="background:'+cvv+'"></span></td><td>Vacuum</td><td>'+sh[2]+'</td></tr>'
+        +'<tr><td><span class="dot" style="background:'+ck+'"></span></td><td>Curvature</td><td>'+sh[3]+'</td></tr>';
       const neg=ol<0?'<div class="note">Negative vacuum energy is not shown in the pie.</div>':'';
       const empty=(md.Om===0&&md.OL===0&&md.Or===0)?'<div class="note">Empty: no matter, radiation or vacuum energy; all curvature.</div>':'';
       const closedNote=ok<-1e-6?'<div class="note">Closed: the ingredients add up to more than 1, so Ωk is negative and can\'t be a slice. The pie shows the ingredients only; they overshoot 1 by '+fmt(-ok)+'.</div>':'';
