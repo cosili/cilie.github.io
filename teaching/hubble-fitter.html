@@ -130,8 +130,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
 
       <div class="row">
         <label for="cut">Leave out points with <span id="cutvar">distance</span> below</label>
-        <div style="display:flex;gap:8px;align-items:center;margin-top:4px"><input type="number" id="cut" step="any" style="width:110px"> <span id="cutunit"></span></div>
-        <small>Empty = keep all. Clicked points stay out either way.</small>
+        <div style="display:flex;gap:8px;align-items:center;margin-top:4px;flex-wrap:wrap"><input type="number" id="cut" step="any" style="width:100px"> <span>or above</span> <input type="number" id="cutHi" step="any" style="width:100px"> <span id="cutunit"></span></div>
+        <small>Either box empty = no limit on that side. Clicked points stay out either way.</small>
       </div>
       <div class="row" style="display:flex;gap:8px;flex-wrap:wrap">
         <button type="button" id="reset">Include all points</button>
@@ -174,7 +174,7 @@ const SN50=[["SN 1994U",3.111,31.72],["SN 1997bp",3.363,32.81],["SN 1995D",3.398
 
   let pts=[], type='lin', off=new Set(), custom=[];
   function load(){
-    const ds=$('ds').value; off=new Set(); $('cut').value='';
+    const ds=$('ds').value; off=new Set(); $('cut').value=''; $('cutHi').value='';
     $('customBox').hidden=ds!=='custom';
     if(ds==='hubble'){type='lin'; pts=HUBBLE.map(p=>({n:p[0],x:p[1],y:p[2]})); $('dsnote').textContent='Distances in Mpc (millions of parsecs), velocities in km/s.';}
     else if(ds==='sn'){type='mag'; pts=SN.map(p=>({n:p[0],x:p[1],y:p[2]})); $('dsnote').textContent='x = log₁₀(cz), with cz in km/s; y = distance modulus μ (magnitudes).';}
@@ -194,7 +194,11 @@ const SN50=[["SN 1994U",3.111,31.72],["SN 1997bp",3.363,32.81],["SN 1995D",3.398
     custom=out; type=$('ctype').value; pts=custom.slice(); off=new Set(); load();
   }
   const dM=()=>type==='mag'?+$('dM').value:0;
-  function included(){ const c=$('cut').value===''?-Infinity:+$('cut').value; return pts.map((p,i)=>({...p,i,y:p.y+dM()})).filter(p=>!off.has(p.i)&&p.x>=c); }
+  function included(){
+    const c=$('cut').value===''?-Infinity:+$('cut').value;
+    const ch=$('cutHi').value===''?Infinity:+$('cutHi').value;
+    return pts.map((p,i)=>({...p,i,y:p.y+dM()})).filter(p=>!off.has(p.i)&&p.x>=c&&p.x<=ch);
+  }
 
   function fits(){
     const P=included(), n=P.length, r={n};
@@ -285,14 +289,14 @@ const SN50=[["SN 1994U",3.111,31.72],["SN 1997bp",3.363,32.81],["SN 1995D",3.398
   $('cv').addEventListener('click',e=>{ if(!geom||!pts.length) return; const rc=$('cv').getBoundingClientRect(), px=e.clientX-rc.left, py=e.clientY-rc.top;
     let best=-1,bd=14; pts.forEach((p,i)=>{ const d=Math.hypot(geom.X(p.x)-px,geom.Y(p.y+dM())-py); if(d<bd){bd=d;best=i;} });
     if(best>=0){ off.has(best)?off.delete(best):off.add(best); draw(); } });
-  $('reset').addEventListener('click',()=>{off=new Set(); $('cut').value=''; draw();});
+  $('reset').addEventListener('click',()=>{off=new Set(); $('cut').value=''; $('cutHi').value=''; draw();});
   $('csv').addEventListener('click',()=>{ const P=included(); const head=type==='lin'?'name,distance_Mpc,velocity_km_s':'name,log10_cz,distance_modulus_mu';
     const txt=head+'\n'+P.map(p=>'"'+p.n+'",'+p.x+','+(type==='lin'?p.y:p.y.toFixed(3))).join('\n');
     const a=document.createElement('a'); a.href=URL.createObjectURL(new Blob([txt],{type:'text/csv'})); a.download=($('ds').value==='hubble'?'hubble1929':$('ds').value==='sn'?'riess1998_nearby_SNe':$('ds').value==='sn50'?'riess1998_all_SNe':'my_data')+'.csv'; document.body.appendChild(a); a.click(); a.remove(); });
   $('ds').addEventListener('change',load);
   $('ctype').addEventListener('change',()=>{ if($('ds').value==='custom') load(); });
   $('cload').addEventListener('click',parseCustom);
-  ['fOrigin','fFree','fFixed','fFreeM','dM','cut'].forEach(id=>$(id).addEventListener('input',draw));
+  ['fOrigin','fFree','fFixed','fFreeM','dM','cut','cutHi'].forEach(id=>$(id).addEventListener('input',draw));
   window.addEventListener('resize',draw);
   load();
 })();
