@@ -669,8 +669,20 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       if(pick.mode==='time'){ md.tp=pick.t; md.ap=interpA(md.r.pts,pick.t); }
       else { md.ap=1/(1+pick.z); md.tp=timeOfA(md.r.pts,md.ap); if(md.tp==null) md.ap=null; }
     });
-    if(pick.mode==='time'){
-      ctx.strokeStyle=css('--cur'); ctx.lineWidth=1.5; ctx.beginPath(); ctx.moveTo(X(pick.t),m.t); ctx.lineTo(X(pick.t),m.t+ph); ctx.stroke();
+    /* The line marks the moment the card is describing. Picking a time puts
+       every universe at the same instant, so it is solid. Picking a redshift
+       does not: each one reaches that size at its own time, so the line
+       follows yours and goes dashed to say that the others are elsewhere. */
+    const tLine = pick.mode==='time' ? pick.t : ms[0].tp;
+    if(tLine!=null){
+      ctx.save(); ctx.strokeStyle=css('--cur'); ctx.lineWidth=1.5;
+      if(pick.mode!=='time') ctx.setLineDash([5,4]);
+      ctx.beginPath(); ctx.moveTo(X(tLine),m.t); ctx.lineTo(X(tLine),m.t+ph); ctx.stroke(); ctx.restore();
+      /* and the thumb follows it, so the two controls never disagree */
+      if(pick.mode!=='time'){
+        if(logX){ const tau=tLine-tBang; if(tau>0) ts.value=Math.log10(tau); }
+        else ts.value=Math.max(x0,Math.min(x1,tLine));
+      }
     }
     ms.forEach(md=>{ if(md.ap==null||md.tp==null) return; ctx.fillStyle=md.color; ctx.strokeStyle=css('--bg'); ctx.lineWidth=2; ctx.beginPath(); ctx.arc(X(md.tp),Y(md.ap),5.5,0,2*Math.PI); ctx.fill(); ctx.stroke(); });
     ctx.restore();
