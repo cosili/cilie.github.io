@@ -376,6 +376,34 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     for(let i=0;i<lines.length;i++) ctx.fillText(lines[i],x,y-13*(lines.length-1-i));
   }
 
+  /* A second scale across the top. z = 1/a - 1, and a is read off your own
+     universe, so these ticks slide when the sliders do -- they are not fixed
+     to the time axis. Only the past carries a redshift: after today a is
+     bigger than 1 and the light would be blueshifted instead. */
+  const Z_TICKS=[0,0.2,0.5,1,1.5,2,3,5,7,10,15,20,30,50,100,200,500,1000,2000,5000,10000,20000];
+  function zaxis(ctx,m,pw,X,pts,refs){
+    const L=m.l,R=m.l+pw;
+    ctx.save();
+    ctx.font='11px system-ui, sans-serif';
+    ctx.strokeStyle=css('--axis'); ctx.lineWidth=1; ctx.textAlign='center';
+    const taken=[];
+    Z_TICKS.forEach(z=>{
+      const t = z===0 ? 0 : timeOfA(pts,1/(1+z));
+      if(t==null) return;
+      const x=X(t); if(!(x>=L-0.5&&x<=R+0.5)) return;
+      const lab=String(z), w=ctx.measureText(lab).width, a=x-w/2, b=x+w/2;
+      if(a<L-2||b>R+2) return;
+      if(taken.some(q=>b>q[0]-8&&a<q[1]+8)) return;   /* never let them touch */
+      taken.push([a,b]);
+      ctx.fillStyle=css('--muted');
+      ctx.beginPath(); ctx.moveTo(x,m.t-6); ctx.lineTo(x,m.t); ctx.stroke();
+      ctx.fillText(lab,x,m.t-9);
+    });
+    ctx.fillStyle=css('--ink'); ctx.font='13px system-ui, sans-serif';
+    ctx.fillText('redshift z'+(refs?' (your universe)':''),m.l+pw/2,13);
+    ctx.restore();
+  }
+
   function evDot(ctx,x,y,color){
     ctx.fillStyle=color; ctx.strokeStyle=css('--bg'); ctx.lineWidth=2;
     ctx.beginPath(); ctx.arc(x,y,5,0,2*Math.PI); ctx.fill(); ctx.stroke();
@@ -520,7 +548,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     const dpr=window.devicePixelRatio||1, W=cv.clientWidth, Hh=cv.clientHeight;
     cv.width=W*dpr; cv.height=Hh*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.clearRect(0,0,W,Hh);
-    const m={l:56,r:16,t:16,b:44}, pw=W-m.l-m.r, ph=Hh-m.t-m.b;
+    const m={l:56,r:16,t:40,b:44}, pw=W-m.l-m.r, ph=Hh-m.t-m.b;   /* t leaves room for the redshift scale */
     const x0=-s.past, x1=s.fut, y0=0, y1=2.5;
 
     /* Your universe has to be solved before the axes exist: a log time axis is
@@ -655,6 +683,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     const ev=$('events');
     ev.disabled=!logX; ev.parentElement.style.opacity = logX ? 1 : .45;
     if(logX && ev.checked) epochs(ctx,m,pw,ph,X,ms[0].r.pts);
+
+    zaxis(ctx,m,pw,X,ms[0].r.pts,ms.length>1);
 
     ctx.save(); ctx.beginPath(); ctx.rect(m.l,m.t,pw,ph); ctx.clip();
     ms.slice().reverse().forEach(md=>{
