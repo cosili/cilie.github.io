@@ -201,10 +201,10 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       </div>
       <div class="timewin">
         <span>Show from</span>
-        <input id="past" type="range" min="0" max="60" step="0.5" value="20" aria-label="How far into the past to show">
+        <input id="past" type="range" min="0" max="60" step="0.1" value="20" aria-label="How far into the past to show">
         <span class="tw" id="pastLab"></span>
         <span>to</span>
-        <input id="fut" type="range" min="1" max="100" step="0.5" value="10" aria-label="How far into the future to show">
+        <input id="fut" type="range" min="0" max="100" step="0.1" value="10" aria-label="How far into the future to show">
         <span class="tw" id="futLab"></span>
         <small id="pastoff" hidden>Earlier than the Big Bang, so the axis starts there.</small>
       </div>
@@ -562,8 +562,10 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     setNum('h0o',s.H0);
     $('h0s').textContent='= '+(s.H0/GYR).toFixed(4)+' per billion years (1/H₀ = '+(GYR/s.H0).toFixed(1)+' billion years)';
     setNum('omo',s.Om); setNum('olo',s.OL);
-    $('pastLab').textContent = s.past===0 ? 'today' : s.past.toFixed(1)+' billion years ago';
-    $('futLab').textContent = s.fut.toFixed(1)+' billion years from now';
+    /* two decimals where they are needed, none where they are not */
+    const gy=v=>String(+v.toFixed(2));
+    $('pastLab').textContent = s.past===0 ? 'today' : gy(s.past)+' billion years ago';
+    $('futLab').textContent = s.fut===0 ? 'today' : gy(s.fut)+' billion years from now';
     $('rado').textContent='(Ω_rad = '+(4.15e-5/Math.pow(s.H0/100,2)).toExponential(1)+')';
     const Ok=1-s.Om-s.OL-Or;
     $('geo').textContent='Ωm + ΩΛ = '+(s.Om+s.OL).toFixed(2)+(Math.abs(Ok)<0.005?' (flat)':(Ok>0?' (open)':' (closed)'));
@@ -572,7 +574,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     cv.width=W*dpr; cv.height=Hh*dpr; ctx.setTransform(dpr,0,0,dpr,0,0);
     ctx.clearRect(0,0,W,Hh);
     const m={l:56,r:16,t:40,b:44}, pw=W-m.l-m.r, ph=Hh-m.t-m.b;   /* t leaves room for the redshift scale */
-    const x0=-s.past, x1=s.fut, y0=0, y1=2.5;
+    const x0=-s.past, x1=Math.max(s.fut,x0+0.05), y0=0, y1=2.5;   /* never a zero-width window */
 
     /* Your universe has to be solved before the axes exist: a log time axis is
        measured from its Big Bang, so the transform depends on where that is. */
