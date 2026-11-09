@@ -323,7 +323,11 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   /* show at most 4 decimals and no trailing zeros: 0.3, not 0.3000 */
   /* Two decimals. No measurement of Om or OL is anywhere near a third, so a
      box reading 0.2999 would be false precision dressed up as care. */
-  function setNum(id,v){ const el=$(id); if(document.activeElement!==el) el.value=String(+(+v).toFixed(2)); }
+  /* Hundredths are all a measurement of Om or OL deserves, and the sliders
+     step that way, so these boxes almost always read two decimals. The one
+     exception is the No Big Bang threshold, which is a boundary rather than a
+     measurement -- it is shown in full, with trailing zeros trimmed. */
+  function setNum(id,v){ const el=$(id); if(document.activeElement!==el) el.value=String(+(+v).toFixed(5)); }
   function state(){return {H0:+$('h0').value,Om:+$('om').value,OL:+$('ol').value,past:+$('past').value,fut:+$('fut').value};}
   let pick={mode:'time',t:0,z:null}; let geom=null;
 
@@ -1039,7 +1043,19 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   function goZ(){ const z=parseFloat($('zin').value); if(!(z>=0)) return; pick={mode:'z',t:null,z}; draw(); }
   $('zBtn').addEventListener('click',goZ);
   $('zin').addEventListener('keydown',e=>{ if(e.key==='Enter') goZ(); });
-  $('thrBtn').addEventListener('click',()=>{const Om=+$('om').value; const T=Math.ceil(thresholdOL(Om,OrOf(+$('h0').value))/0.01)*0.01; $('ol').value=T.toFixed(2); $('past').value='60'; draw();});
+  /* Rounding up to the nearest hundredth overshot the threshold by enough to
+     matter: at Om = 0.30 it gave OL = 1.72, whose bounce is 24 Gyr back, where
+     the threshold itself is 1.71389 and bounces at 72. The slider is opened up
+     to hold the exact value, and closes back to hundredths the moment anyone
+     touches it, so stepping off the boundary is still one press. */
+  $('thrBtn').addEventListener('click',()=>{
+    const Om=+$('om').value, T=thresholdOL(Om,OrOf(+$('h0').value));
+    /* round up, never down: the button promises the smallest OL with no Big
+       Bang, and toFixed alone can land a hair under it and give one back */
+    const ol=$('ol'); ol.step='0.00001'; ol.value=(Math.ceil(T*1e5)/1e5).toFixed(5);
+    $('past').value='60'; draw();
+  });
+  ['pointerdown','keydown'].forEach(e=>$('ol').addEventListener(e,()=>{ $('ol').step='0.01'; }));
   document.querySelectorAll('[data-p]').forEach(b=>b.addEventListener('click',()=>{const [mm,l]=b.dataset.p.split(',');$('h0').value=70;$('om').value=mm;$('ol').value=l;if(b.dataset.past)$('past').value=b.dataset.past;if(b.dataset.fut)$('fut').value=b.dataset.fut;draw();}));
 
   ['h0','om','ol','past','fut','tEmpty','tMatter','tOurs','tRad','logX','logY','events'].forEach(id=>$(id).addEventListener('input',draw));
