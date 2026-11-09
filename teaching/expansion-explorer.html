@@ -300,7 +300,12 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         a=na; v=nv; pts.push([t,a]);
         if(a<minA){minA=a;tMin=t;}
         if(a>maxA){maxA=a;tMax=t;}
-        if(a>1e4) break;
+        /* A runaway guard, not a drawing limit. At 1e4 the curve stopped short
+           of the window whenever Lambda was large: H0 = 70 with OL = 2.49
+           reaches it by 84 Gyr, so a 100 Gyr view ended in mid-air. The
+           largest a this tool can ask for is H0 = 100, OL = 5 at 100 Gyr,
+           which is under 1e10. */
+        if(a>1e12) break;
       }
       return {pts,end,minA,tMin,turned,maxA,tMax,turnFwd};
     }
