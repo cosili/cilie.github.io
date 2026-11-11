@@ -51,8 +51,10 @@ h1{font:600 1.7rem/1.2 Georgia,"Times New Roman",serif;margin:0 0 4px}
 .ctrl label .numwrap{display:inline-flex;align-items:baseline;gap:5px}
 .ctrl label .unit{font-weight:700;color:var(--accent)}
 .ctrl small{color:var(--muted);display:block;margin-top:2px}
-#refoff,#pastoff,#evoff{display:block;color:var(--muted);font-size:.8rem;margin:2px 0 4px}
-#refoff[hidden],#pastoff[hidden],#evoff[hidden]{display:none}
+/* These appear and disappear as the sliders move. display:none made the page
+   jump 25px every time one did, so they keep their line and go invisible. */
+#refoff,#pastoff,#evoff{display:block;color:var(--muted);font-size:.8rem;margin:2px 0 4px;min-height:1.15em}
+#refoff[hidden],#pastoff[hidden],#evoff[hidden]{display:block;visibility:hidden}
 #evoff{flex-basis:100%}
 input[type=range]{width:100%;accent-color:var(--accent)}
 /* "Show from X to Y" with both sliders and both readouts is far wider than the
@@ -60,6 +62,10 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .timewin{display:grid;grid-template-columns:auto minmax(80px,1fr) auto;gap:6px 10px;
   align-items:center;margin-top:8px;font-size:.9rem;color:var(--muted)}
 .timewin .tw{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600}
+/* "Show from" counts backwards from today, so left-to-right on its track ran
+   the opposite way to the plot and to the "to" slider beneath it. Flip it:
+   dragging either thumb rightwards now moves that edge of the window right. */
+#past{direction:rtl}
 .timewin #pastoff{grid-column:1/-1;margin:0}
 /* Line the moment slider up with the plot above it. The canvas reserves 56px
    on the left for the y axis and 16px on the right, so the data area is inset
@@ -323,6 +329,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     return thrCache[key]=hi;
   }
 
+  let pieCorner=null;   /* which corner the overlay card is parked in */
   const cv=$('cv'), ctx=cv.getContext('2d');
   function css(n){return getComputedStyle(root).getPropertyValue(n).trim();}
   /* show at most 4 decimals and no trailing zeros: 0.3, not 0.3000 */
@@ -454,6 +461,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
 
   /* dots on your own curve, with their captions stacked in the open wedge
      under it. Leaders are drawn first so a box hides any that passes behind. */
+  let capLast=null;   /* the caption column's last resting place */
   function markers(ctx,m,pw,ph,X,Y,pts){
     const L=m.l,R=m.l+pw,T=m.t,B=m.t+ph;
     ctx.save(); ctx.beginPath(); ctx.rect(L,T,pw,ph); ctx.clip();
@@ -485,19 +493,38 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         const hs=blocks.map(b=>b.length*13+9);
         return {blocks:blocks, hs:hs, total:hs.reduce((u,v)=>u+v,0)+8*(live.length-1)};
       };
-      const slot=(t,lo,hi)=>{ const below=hi+10, above=lo-10-t;
+      /* Snapped to 24px, rounded away from the curve. Tracking the curve exactly
+         made the column creep 4 to 7px every few steps of a drag; on a grid the
+         same stretch of curve gives the same answer and it holds still. */
+      const G=24;
+      const slot=(t,lo,hi)=>{ const below=Math.ceil((hi+10)/G)*G, above=Math.floor((lo-10-t)/G)*G;
         if(below+t<=B-58) return below;          /* clear of the arrows at the foot */
         if(above>=T+34) return above;            /* clear of the two epoch label rows */
         return null; };
 
+      /* Re-solving this every frame made the column twitch all the way down a
+         drag -- 34 moves in a 61-step pull, some of them 83px. Keep the last
+         choice while it still clears the curve and fits, and only look for a
+         new one when it does not. */
       let boxW=null, L=null, by=null;
-      [[172,true],[216,true],[260,true],[172,false]].forEach(([w,full])=>{
-        if(by!==null || w>pw-24) return;
-        const b=band(w), cand=lay(w,full), y=slot(cand.total,b[0],b[1]);
-        if(y!==null){ boxW=w; L=cand; by=y; }
-      });
+      if(capLast && capLast.n===live.length && capLast.w<=pw-24){
+        const b=band(capLast.w), cand=lay(capLast.w,capLast.full);
+        const top=capLast.by, bot=top+cand.total;
+        /* only that it does not overlap -- demanding a fixed gap made it let go
+           and re-solve on every small move of the curve */
+        const clearOfCurve = bot<=b[0] || top>=b[1];
+        if(clearOfCurve && top>=T+34 && bot<=B-58){ boxW=capLast.w; L=cand; by=top; }
+      }
+      if(by===null){
+        [[172,true],[216,true],[260,true],[172,false]].forEach(([w,full])=>{
+          if(by!==null || w>pw-24) return;
+          const b=band(w), cand=lay(w,full), y=slot(cand.total,b[0],b[1]);
+          if(y!==null){ boxW=w; L=cand; by=y; }
+        });
+      }
       if(by===null){ boxW=Math.min(172,pw-24); L=lay(boxW,false);
         const b=band(boxW); by=Math.max(T+34,Math.min(b[1]+10,B-58-L.total)); }
+      capLast={w:boxW, full:L.blocks[0].length>1, by:by, n:live.length};
       const bx=R-6-boxW;
 
       const tops=[]; let yy=by;
@@ -864,6 +891,11 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       return n;
     });
     let best=0; for(let i=1;i<corners.length;i++) if(score[i]<score[best]) best=i;
+    /* Without this the card teleports across the plot mid-drag. Stay where it
+       is until the curve covers it appreciably more than the best corner. */
+    if(pieCorner!=null && pieCorner<corners.length
+       && score[pieCorner] <= score[best] + 40 + Math.abs(score[best])*0.25) best=pieCorner;
+    pieCorner=best;
     over.style.left=Math.round(corners[best].x)+'px';
     over.style.top =Math.round(corners[best].y)+'px';
   })();
