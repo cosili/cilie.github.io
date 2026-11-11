@@ -369,7 +369,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   const Z_REC_START=1450, Z_REC_END=890;
   const Z_CMB_HI=1170, Z_CMB_LO=970;
   const Z_REION_START=15, Z_REION_END=5.6;
-  const Z_DAWN_HI=30, Z_DAWN_LO=20;
+  const Z_DAWN_HI=30, Z_DAWN_MID=25, Z_DAWN_LO=20;
   /* fixed redshifts, so where each one lands in time is read off whichever
      universe is on the plot. Records as of November 2026. */
   const EVENTS=[
@@ -551,11 +551,25 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         [cx1,cx2].forEach(x=>{ ctx.beginPath(); ctx.moveTo(x,T); ctx.lineTo(x,T+ph); ctx.stroke(); });
         ctx.restore(); } }
 
-    /* cosmic dawn, inside the dark ages: the first stars light up */
-    const d1=tOf(Z_DAWN_HI), d2=tOf(Z_DAWN_LO);
+    /* Cosmic dawn, inside the dark ages. The first stars do not switch on at
+       z = 30 and off at z = 20, and they are what goes on to reionize the gas,
+       so the tint fades in across the band, holds at the typical z = 25, then
+       dissolves over z = 20 to 15 and hands straight to the reionization
+       gradient rather than stopping dead with plain dark ages in between. */
+    const d1=tOf(Z_DAWN_HI), dm=tOf(Z_DAWN_MID), d2=tOf(Z_DAWN_LO);
     let dx1=null,dx2=null;
     if(d1!=null&&d2!=null){ dx1=cl(X(d1)); dx2=cl(X(d2));
-      if(dx2>dx1){ ctx.fillStyle=css('--dawn'); ctx.fillRect(dx1,T,dx2-dx1,ph); } }
+      const dxm=dm!=null?cl(X(dm)):(dx1+dx2)/2;
+      const far=Math.max(dx2,x1);          /* x1 is where reionization begins */
+      if(far>dx1){
+        const dawn=css('--dawn'), clear=dawn.replace(/,[^,]*\)$/,',0)');
+        const g=ctx.createLinearGradient(dx1,0,far,0);
+        const at=x=>Math.min(1,Math.max(0,(x-dx1)/(far-dx1)));
+        g.addColorStop(0,clear);
+        g.addColorStop(at(dxm),dawn);
+        g.addColorStop(at(dx2),dawn);
+        g.addColorStop(1,clear);
+        ctx.fillStyle=g; ctx.fillRect(dx1,T,far-dx1,ph); } }
 
     ctx.font='11px system-ui, sans-serif'; ctx.fillStyle=css('--muted');
     ctx.strokeStyle=css('--muted'); ctx.lineWidth=1.2;
