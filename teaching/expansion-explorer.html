@@ -61,7 +61,11 @@ input[type=range]{width:100%;accent-color:var(--accent)}
    column, so it is a grid of two rows: label, slider, readout. */
 .timewin{display:grid;grid-template-columns:auto minmax(80px,1fr) auto;gap:6px 10px;
   align-items:center;margin-top:8px;font-size:.9rem;color:var(--muted)}
-.timewin .tw{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600}
+.timewin .tw{white-space:nowrap;font-variant-numeric:tabular-nums;color:var(--accent);font-weight:600;
+  /* The readout column is sized to its widest line, so "today" and "100 billion
+     years from now" gave it two different widths and the slider beside it grew
+     and shrank by 49px as you dragged. Hold the longest. */
+  min-width:186px}
 /* "Show from" counts backwards from today, so left-to-right on its track ran
    the opposite way to the plot and to the "to" slider beneath it. Flip it:
    dragging either thumb rightwards now moves that edge of the window right. */
