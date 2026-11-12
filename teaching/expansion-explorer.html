@@ -284,8 +284,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
      quadrature: 0.09% in the age, with matter-radiation equality at z = 3400
      and radiation's 90% share at z = 31000 both far inside. */
   const A_MIN=3e-7;
-  function evolve(Om,OL,H0,tmin,tmax,Or,hmax){
-    Or=Or||0; hmax=hmax||0.02;
+  function evolve(Om,OL,H0,tmin,tmax,Or,hmax,amax){
+    Or=Or||0; hmax=hmax||0.02; amax=amax||1e12;
     const H=H0/GYR, H2=H*H;
     const acc=(a)=>H2*a*(OL-Om/(2*a*a*a)-Or/(a*a*a*a));
     function run(dir,tlim){
@@ -319,7 +319,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
            reaches it by 84 Gyr, so a 100 Gyr view ended in mid-air. The
            largest a this tool can ask for is H0 = 100, OL = 5 at 100 Gyr,
            which is under 1e10. */
-        if(a>1e12) break;
+        if(a>amax) break;
       }
       return {pts,end,minA,tMin,turned,maxA,tMax,turnFwd};
     }
@@ -331,13 +331,22 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   function thresholdOL(Om,Or){ // smallest OL with a bounce (no Big Bang); numerical when radiation is included
     Or=Or||0; const T0=thresholdAnalytic(Om); if(Or===0) return T0;
     const key=Om.toFixed(4)+'|'+Or.toExponential(4); if(thrCache[key]!=null) return thrCache[key];
-    const bounces=OL=>evolve(Om,OL,70,-400,0,Or).back.turned;
+    /* This only asks whether the run turns around, which happens below a = 1,
+       so let it stop just after. Left at the drawing cap of 1e12 it ran the
+       backward branch out to there 22 times per bisection, and dragging Om
+       cost 22ms a frame. */
+    const bounces=OL=>evolve(Om,OL,70,-400,0,Or,null,5).back.turned;
     let lo=T0-0.01, hi=T0+0.2; while(!bounces(hi)) hi+=0.2;
     for(let k=0;k<22;k++){ const mid=(lo+hi)/2; if(bounces(mid)) hi=mid; else lo=mid; }
     return thrCache[key]=hi;
   }
 
-  let pieCorner=null;   /* which corner the overlay card is parked in */
+  let pieCorner=null, pieH=null;   /* where the overlay card is parked, and how tall */
+  /* Everything drawn inside the plot that the overlay should not sit on: the
+     epoch labels, the arrows, the captions. Filled during a draw, read when
+     the card is placed. */
+  let ink=[];
+  const inkRect=(x,y,w,h)=>ink.push([x,y,w,h]);
   const cv=$('cv'), ctx=cv.getContext('2d');
   function css(n){return getComputedStyle(root).getPropertyValue(n).trim();}
   /* show at most 4 decimals and no trailing zeros: 0.3, not 0.3000 */
@@ -539,7 +548,8 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       L.hs.forEach(h=>{ tops.push(yy); yy+=h+8; });
       ctx.strokeStyle=css('--axis'); ctx.lineWidth=1;
       live.forEach((o,i)=>{ ctx.beginPath(); ctx.moveTo(o.px,o.py); ctx.lineTo(bx+12,tops[i]); ctx.stroke(); });
-      live.forEach((o,i)=>{ evDot(ctx,o.px,o.py,css('--you')); evBox(ctx,L.blocks[i],bx,tops[i],boxW); });
+      live.forEach((o,i)=>{ evDot(ctx,o.px,o.py,css('--you')); evBox(ctx,L.blocks[i],bx,tops[i],boxW);
+        inkRect(bx,tops[i],boxW,L.hs[i]); });
     } else {
       /* too narrow for captions: name the dots instead */
       live.forEach(o=>{ evDot(ctx,o.px,o.py,css('--you'));
@@ -617,6 +627,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
       if(taken[row].some(t=>b>t[0]-6&&a<t[1]+6)) return;
       taken[row].push([a,b]);
       ctx.textAlign=align; ctx.fillText(txt,x,T+14+row*14);
+      inkRect(a,T+3+row*14,b-a,14);
     };
     place('reionization',(x1+x2)/2,'center',0);
     if(rx1!=null&&rx2>rx1) place('recombination',(rx1+rx2)/2,'center',0);
@@ -626,8 +637,10 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
 
     const y=B-16;
     if(x1-L>44){ arrowTo(ctx,x1-6,x1-32,y);
-      labelBlock(ctx,'neutral H still abundant',x1-38,y+4,x1-38-L-4,'right'); }
+      labelBlock(ctx,'neutral H still abundant',x1-38,y+4,x1-38-L-4,'right');
+      inkRect(L,y-10,x1-L,24); }
     if(R-x2>44){ arrowTo(ctx,x2+6,x2+32,y);
+      inkRect(x2,y-50,R-x2,64);
       /* the stretch after reionization is a sixth of the plot at most, so these
          words sit above the arrow and reach back left across the band */
       labelBlock(ctx,'H clouds almost completely ionized by stellar light',R-4,y-14,Math.min(250,R-L-8),'right'); }
@@ -635,6 +648,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
   }
 
   function draw(){
+    ink=[];
     const s=state();
     const Or=OrOf(s.H0);
     setNum('h0o',s.H0);
@@ -865,13 +879,18 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     over.appendChild(mine);
     // Park the box in whichever corner of the plot the curves leave emptiest,
     // so it never hides the part of a(t) you are looking at.
-    const BW=256, BH=218, in_=8;
-    const corners=[
-      {x:m.l+in_,          y:m.t+in_},          // top left
-      {x:m.l+in_,          y:m.t+ph-BH-in_},    // bottom left
-      {x:m.l+pw-BW-in_,    y:m.t+ph-BH-in_},    // bottom right
-      {x:m.l+pw-BW-in_,    y:m.t+in_}           // top right
-    ];
+    /* Measuring the card here read layout straight after innerHTML was set,
+       which forced a reflow on every frame of a drag -- 22ms a draw. Its
+       height is fixed by the CSS now, so take it once. */
+    if(pieH==null) pieH=Math.round(over.getBoundingClientRect().height)||229;
+    const BW=256, BH=pieH, in_=8;
+    /* Four corners left it sitting on the epoch labels with nowhere else to
+       go. Search a grid of places instead, so it can find a gap anywhere. */
+    const corners=[];
+    const spanX=Math.max(0,pw-BW-2*in_), spanY=Math.max(0,ph-BH-2*in_);
+    const nx=Math.max(1,Math.round(spanX/40)), ny=Math.max(1,Math.round(spanY/30));
+    for(let i=0;i<=nx;i++) for(let j=0;j<=ny;j++)
+      corners.push({x:m.l+in_+spanX*i/nx, y:m.t+in_+spanY*j/ny});
     // Walk each curve in screen space and measure how much of it a box here
     // would cover; raw sample counts would just flag wherever a(t) is flattest.
     const seen=[];
@@ -890,20 +909,44 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
         prev=[px,py];
       });
     });
-    const score=corners.map(function(c){
-      let n=0;
-      for(let i=0;i<seen.length;i++){
-        const q=seen[i];
-        if(q[0]>=c.x&&q[0]<=c.x+BW&&q[1]>=c.y&&q[1]<=c.y+BH) n+=q[2];
-      }
-      return n;
-    });
+    /* Everything is scored as area buried, so curve and text compare: a curve
+       sample stands for 4px of path 3px wide, a label for the rectangle it
+       occupies. Text counts double, since a hidden word is worse than a hidden
+       stretch of a line you can follow either side of the card.
+
+       Scored through a summed-area table on 16px cells. Testing every place
+       against every sample cost 13ms a draw and put eleven frames of a slider
+       drag over budget; this way each place is four lookups. */
+    const CELL=16, gw=Math.ceil(pw/CELL)+1, gh=Math.ceil(ph/CELL)+1;
+    const cell=new Float64Array(gw*gh);
+    const gx=v=>Math.max(0,Math.min(gw-1,Math.floor((v-m.l)/CELL)));
+    const gy=v=>Math.max(0,Math.min(gh-1,Math.floor((v-m.t)/CELL)));
+    for(let i=0;i<seen.length;i++){ const q=seen[i];
+      if(q[0]<m.l||q[0]>m.l+pw||q[1]<m.t||q[1]>m.t+ph) continue;
+      cell[gy(q[1])*gw+gx(q[0])] += q[2]*12; }
+    for(let i=0;i<ink.length;i++){ const r=ink[i];
+      const i0=gx(r[0]), i1=gx(r[0]+r[2]), j0=gy(r[1]), j1=gy(r[1]+r[3]);
+      const per=(r[2]*r[3]*2)/Math.max(1,(i1-i0+1)*(j1-j0+1));
+      for(let j=j0;j<=j1;j++) for(let i2=i0;i2<=i1;i2++) cell[j*gw+i2]+=per; }
+    const sat=new Float64Array((gw+1)*(gh+1));
+    for(let j=0;j<gh;j++) for(let i=0;i<gw;i++)
+      sat[(j+1)*(gw+1)+i+1] = cell[j*gw+i] + sat[j*(gw+1)+i+1] + sat[(j+1)*(gw+1)+i] - sat[j*(gw+1)+i];
+    const area=(x0,y0,x1,y1)=>{
+      const a=gx(x0), b=gy(y0), c2=gx(x1)+1, d=gy(y1)+1;
+      return sat[d*(gw+1)+c2] - sat[b*(gw+1)+c2] - sat[d*(gw+1)+a] + sat[b*(gw+1)+a]; };
+    const score=corners.map(c=>area(c.x,c.y,c.x+BW,c.y+BH));
     let best=0; for(let i=1;i<corners.length;i++) if(score[i]<score[best]) best=i;
-    /* Without this the card teleports across the plot mid-drag. Stay where it
-       is until the curve covers it appreciably more than the best corner. */
-    if(pieCorner!=null && pieCorner<corners.length
-       && score[pieCorner] <= score[best] + 40 + Math.abs(score[best])*0.25) best=pieCorner;
-    pieCorner=best;
+    /* Without this the card wanders mid-drag. Keep where it is while it buries
+       little more than the best place would. */
+    if(pieCorner){
+      let cur=-1, bestD=1e9;
+      for(let i=0;i<corners.length;i++){
+        const d=Math.abs(corners[i].x-pieCorner.x)+Math.abs(corners[i].y-pieCorner.y);
+        if(d<bestD){bestD=d;cur=i;}
+      }
+      if(cur>=0 && bestD<2 && score[cur]<=score[best]+600) best=cur;
+    }
+    pieCorner={x:corners[best].x, y:corners[best].y};
     over.style.left=Math.round(corners[best].x)+'px';
     over.style.top =Math.round(corners[best].y)+'px';
   })();
@@ -1127,7 +1170,7 @@ h1,h2,h3{ font-family:Georgia,'Times New Roman',serif; font-weight:600; }
     });
     $(numId).addEventListener('blur',draw);
   });
-  window.addEventListener('resize',draw);
+  window.addEventListener('resize',()=>{pieH=null; draw();});
   draw();
 })();
 </script>
